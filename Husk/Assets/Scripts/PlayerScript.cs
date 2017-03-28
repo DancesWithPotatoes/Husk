@@ -1,7 +1,7 @@
 ﻿//////////////////////////////////////////////////
 // Author/s:            Chris Murphy
 // Date created:        25/03/17
-// Date last edited:    28/03/17
+// Date last edited:    29/03/17
 //////////////////////////////////////////////////
 using UnityEngine;
 using System.Collections;
@@ -20,6 +20,9 @@ public class PlayerScript : MonoBehaviour
         get { return (this.transform.childCount > 0); }
     }
 
+    // A normalised vector representing the direction in which the player is facing.
+    private Vector2 heading;
+
     // Called when the script is initialised.
     private void Start()
     {
@@ -31,6 +34,8 @@ public class PlayerScript : MonoBehaviour
     {
         UpdateMovement();
         UpdateAttacking();
+
+        OutputDebugData();
     }
 
     // Updates the movement of the player character.
@@ -41,14 +46,19 @@ public class PlayerScript : MonoBehaviour
         movement = Vector2.ClampMagnitude(movement, 1.0f);
 
         this.transform.Translate(movement * MoveSpeed * Time.deltaTime);
+
+        // If the movement direction of the player has changed, updates the normalised heading vector.
+        if (movement.magnitude > 0.0f && heading != movement.normalized)
+            heading = movement.normalized;
     }
 
     // Updates the attacking status of the player.
     private void UpdateAttacking()
     {
-        if (Input.GetKeyDown(KeyCode.Space) && !IsAttacking)
+        if (Input.GetKeyDown(KeyCode.Space))
         {
-            Attack();
+            if (!IsAttacking)
+                Attack();
         }
     }
 
@@ -58,8 +68,18 @@ public class PlayerScript : MonoBehaviour
         if (!IsAttacking)
         {
             // Spawns a new attack object and sets it to be a child of the player character.
-            Transform attackObject = (Transform)Instantiate(AttackPrefab, this.transform.position, new Quaternion());
+            Transform attackObject = (Transform)Instantiate(AttackPrefab, this.transform.position, Quaternion.identity);
             attackObject.transform.SetParent(this.transform);
+
+            // NOT WORKING YET!!!
+            Vector3 convertedOrientation = new Vector3(heading.x, 0.0f, heading.y);
+            attackObject.localRotation = Quaternion.LookRotation(convertedOrientation, Vector3.back);
         }
+    }
+
+    // Outputs visual representations and logs of the inner workings of the player object for debugging.
+    private void OutputDebugData()
+    {
+        Debug.DrawLine(this.transform.position, (Vector2)this.transform.position + heading, Color.green, Time.deltaTime, false);
     }
 }
