@@ -1,7 +1,7 @@
 ﻿//////////////////////////////////////////////////
 // Author/s:            Chris Murphy
 // Date created:        28/03/17
-// Date last edited:    29/03/17
+// Date last edited:    31/03/17
 //////////////////////////////////////////////////
 using UnityEngine;
 using System.Collections;
@@ -13,6 +13,16 @@ public class AttackScript : MonoBehaviour
 {
     // The amount of time in seconds for which the attack object exists before self-destructing.
     public float Duration = 0.5f;
+    
+    // Changes the rotation of the attack object so that it aligns with the specified 2D direction vector in local space.
+    public void LocallyRotateAttackToAlignWithVector2(Vector2 direction)
+    {
+        direction.Normalize();
+        // The angle in degrees to rotate the attack object in local space so that it is facing in the same direction as the vector.
+        float attackAngle = Mathf.Atan2(-direction.x, direction.y) * Mathf.Rad2Deg;
+
+        this.transform.localRotation = Quaternion.AngleAxis(attackAngle, Vector3.forward);
+    }
 
     // The amount of time in seconds which the attack object has existed since being spawned.
     private float destructionTimer = 0.0f;

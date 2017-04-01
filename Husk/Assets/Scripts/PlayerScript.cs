@@ -1,7 +1,7 @@
 ﻿//////////////////////////////////////////////////
 // Author/s:            Chris Murphy
 // Date created:        25/03/17
-// Date last edited:    29/03/17
+// Date last edited:    01/04/17
 //////////////////////////////////////////////////
 using UnityEngine;
 using System.Collections;
@@ -14,10 +14,16 @@ public class PlayerScript : MonoBehaviour
     // The maximum movement speed of the player character.
     public float MoveSpeed;
 
+    // The property used to get the heading of the player character.
+    public Vector2 Heading
+    {
+        get { return heading; }
+    }
+
     // The property used to get whether the player currently has an attack object spawned.
     public bool IsAttacking
     {
-        get { return (this.transform.childCount > 0); }
+        get { return (this.transform.Find("Player Attack") != null); }
     }
 
     // A normalised vector representing the direction in which the player is facing.
@@ -26,7 +32,7 @@ public class PlayerScript : MonoBehaviour
     // Called when the script is initialised.
     private void Start()
     {
-
+        heading = Vector2.down;
     }
 
     // Called each frame and used to update gameplay logic.
@@ -48,14 +54,14 @@ public class PlayerScript : MonoBehaviour
         this.transform.Translate(movement * MoveSpeed * Time.deltaTime);
 
         // If the movement direction of the player has changed, updates the normalised heading vector.
-        if (movement.magnitude > 0.0f && heading != movement.normalized)
-            heading = movement.normalized;
+        if (movement.magnitude > 0.0f && heading != movement.normalized)        
+            heading = movement.normalized;        
     }
 
     // Updates the attacking status of the player.
     private void UpdateAttacking()
     {
-        if (Input.GetKeyDown(KeyCode.Space))
+        if (Input.GetButtonDown("LightAttack"))
         {
             if (!IsAttacking)
                 Attack();
@@ -70,10 +76,10 @@ public class PlayerScript : MonoBehaviour
             // Spawns a new attack object and sets it to be a child of the player character.
             Transform attackObject = (Transform)Instantiate(AttackPrefab, this.transform.position, Quaternion.identity);
             attackObject.transform.SetParent(this.transform);
+            attackObject.name = "Player Attack";
 
-            // NOT WORKING YET!!!
-            Vector3 convertedOrientation = new Vector3(heading.x, 0.0f, heading.y);
-            attackObject.localRotation = Quaternion.LookRotation(convertedOrientation, Vector3.back);
+            // Rotates the attack object to face in the same direction as the player heading.
+            attackObject.GetComponent<AttackScript>().LocallyRotateAttackToAlignWithVector2(heading);
         }
     }
 
