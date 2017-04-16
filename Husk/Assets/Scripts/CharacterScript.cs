@@ -1,60 +1,60 @@
 ﻿//////////////////////////////////////////////////
 // Author/s:            Chris Murphy
-// Date created:        25/03/17
+// Date created:        16/04/17
 // Date last edited:    16/04/17
 //////////////////////////////////////////////////
 using UnityEngine;
 using System.Collections;
 
-// A script used to handle the actions of the player-controlled character.
-public class PlayerScript : MonoBehaviour
+// A script used to handle the actions of a character within the world which can attack, move, and be damaged by other characters.
+public class CharacterScript : MonoBehaviour
 {
-    // The prefab used which allows the player to spawn an attack object and damage enemies.
+    // The prefab used which allows the character to spawn an attack object and damage enemy characters.
     public Transform AttackPrefab;
-    // The maximum movement speed of the player character.
+    // The maximum movement speed of the character.
     public float MoveSpeed;
 
-    // The property used to get the heading of the player character.
+    // The property used to get the heading of the character.
     public Vector2 Heading
     {
         get { return heading; }
     }
 
-    // The property used to get whether the player currently has a child attack object spawned.
+    // The property used to get whether the currently has a child attack object spawned.
     public bool IsAttacking
     {
         get { return (this.transform.GetComponentInChildren<AttackScript>() != null); }
     }
 
-    // Freezes the player in place for the specified duration.
+    // Freezes the character in place for the specified duration.
     public void Freeze(float duration)
     {
         if (duration > 0.0f && !isFrozen)
             StartCoroutine(FreezeCoroutine(duration));
     }
 
-    // Changes the local rotation of the specified child object of the player so that it faces in the same direction as the player heading.
-    public void RotateChildObjectToFacePlayerHeading(Transform childObject)
+    // Changes the local rotation of the specified child object of the character so that it faces in the same direction as the character's heading.
+    public void RotateChildObjectToFaceCharacterHeading(Transform childObject)
     {
-        // If the specified object is a child of the player, rotates it.
+        // If the specified object is a child of the character, rotates it.
         if (childObject.IsChildOf(this.transform))
         {
-            // The angle in degrees to rotate the child object in local space so that it is facing in the same direction as the player heading vector.
+            // The angle in degrees to rotate the child object in local space so that it is facing in the same direction as the character heading vector.
             float attackAngle = Mathf.Atan2(-heading.x, heading.y) * Mathf.Rad2Deg;
 
             childObject.localRotation = Quaternion.AngleAxis(attackAngle, Vector3.forward);
         }
         // Else, throws an exception.
         else
-            throw new System.Exception("The object being rotated to face the heading of the player must be a child of the player.");
+            throw new System.Exception("The object being rotated to face the heading of the character must be a child of the character.");
     }
 
-    // A normalised vector representing the direction in which the player is facing.
+    // A normalised vector representing the direction in which the character is facing.
     private Vector2 heading;
-    // Whether or not the player character is currently frozen in place.
+    // Whether or not the character is currently frozen in place.
     private bool isFrozen;
 
-    // A coroutine which freezes the player in place for the specified duration, then unfreezes it.
+    // A coroutine which freezes the character in place for the specified duration, then unfreezes it.
     private IEnumerator FreezeCoroutine(float duration)
     {
         if (duration > 0.0f && !isFrozen)
@@ -86,7 +86,7 @@ public class PlayerScript : MonoBehaviour
         OutputDebugData();
     }
 
-    // Updates the movement of the player character.
+    // Updates the movement of the character.
     private void UpdateMovement()
     {
         if (!isFrozen)
@@ -103,7 +103,7 @@ public class PlayerScript : MonoBehaviour
         }
     }
 
-    // Updates the attacking status of the player.
+    // Updates the attacking status of the character.
     private void UpdateAttacking()
     {
         if (Input.GetButtonDown("LightAttack"))
