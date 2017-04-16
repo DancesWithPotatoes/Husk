@@ -1,7 +1,7 @@
 ﻿//////////////////////////////////////////////////
 // Author/s:            Chris Murphy
 // Date created:        28/03/17
-// Date last edited:    29/03/17
+// Date last edited:    16/04/17
 //////////////////////////////////////////////////
 using UnityEngine;
 using System.Collections;
@@ -18,12 +18,14 @@ public class EnemyScript : MonoBehaviour
         StartCoroutine(FlashColor(Color.red, 0.2f));
     }
 
-    // A coroutine which causes the enemy character to flash the specified color before returning to it's original color.
+    // A coroutine which causes the enemy character to temporarily flash the specified color.
     private IEnumerator FlashColor(Color flashColor, float duration)
     {
         if (duration > 0.0f)
         {
+            // The original color tint of the enemy sprite.
             Color originalColor = GetComponent<SpriteRenderer>().color;
+
             GetComponent<SpriteRenderer>().color = flashColor;
 
             // Pauses the coroutine until the specified duration has passed.
@@ -41,17 +43,5 @@ public class EnemyScript : MonoBehaviour
         GetComponent<BoxCollider2D>().isTrigger = false;
         // Sets the enemy rigidbody to be kinematic so that it can be moved programmatically whilst still colliding with the physics objects in the scene.
         GetComponent<Rigidbody2D>().isKinematic = true;
-    }
-
-    // Called when the script is initialised.
-    private void Start()
-    {
-
-    }
-
-    // Called each frame and used to update gameplay logic.
-    private void Update()
-    {
-
     }
 }
