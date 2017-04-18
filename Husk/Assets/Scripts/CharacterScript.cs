@@ -1,13 +1,15 @@
 ﻿//////////////////////////////////////////////////
 // Author/s:            Chris Murphy
 // Date created:        16/04/17
-// Date last edited:    16/04/17
+// Date last edited:    18/04/17
 //////////////////////////////////////////////////
 using UnityEngine;
 using System.Collections;
 
-// A script used to handle the actions of a character within the world which can attack, move, and be damaged by other characters.
-public class CharacterScript : MonoBehaviour
+[RequireComponent(typeof(BoxCollider2D))]
+[RequireComponent(typeof(Rigidbody2D))]
+// An abstract script which when derived will be used to handle the actions of a character within the world which can attack, move, and be damaged by other character-derived objects.
+public abstract class CharacterScript : MonoBehaviour
 {
     // The prefab used which allows the character to spawn an attack object and damage enemy characters.
     public Transform AttackPrefab;
@@ -24,6 +26,12 @@ public class CharacterScript : MonoBehaviour
     public bool IsAttacking
     {
         get { return (this.transform.GetComponentInChildren<AttackScript>() != null); }
+    }
+
+    // Damages the character.
+    public void Damage()
+    {
+        StartCoroutine(FlashColor(Color.red, 0.2f));
     }
 
     // Freezes the character in place for the specified duration.
@@ -49,10 +57,29 @@ public class CharacterScript : MonoBehaviour
             throw new System.Exception("The object being rotated to face the heading of the character must be a child of the character.");
     }
 
+
     // A normalised vector representing the direction in which the character is facing.
-    private Vector2 heading;
+    protected Vector2 heading;
     // Whether or not the character is currently frozen in place.
-    private bool isFrozen;
+    protected bool isFrozen;
+
+    // An abstract method which will be used to implement the movement of the character in derived scripts.
+    protected abstract void UpdateMovement();
+
+    // An abstract method which will be used to implement the attacking of the character in derived scripts.
+    protected abstract void UpdateAttacking();
+
+    // If the character isn't already attacking, spawns a temporary attack object which will damage enemies with which it collides.
+    protected void Attack()
+    {
+        if (!IsAttacking)
+        {
+            // Spawns a new attack object and sets it to be a child of the character.
+            Transform attackObject = (Transform)Instantiate(AttackPrefab, this.transform.position, Quaternion.identity);
+            attackObject.GetComponent<AttackScript>().InitialiseUsingCharacter(this.transform);
+        }
+    }
+
 
     // A coroutine which freezes the character in place for the specified duration, then unfreezes it.
     private IEnumerator FreezeCoroutine(float duration)
@@ -70,6 +97,35 @@ public class CharacterScript : MonoBehaviour
             yield return null;
     }
 
+    // A coroutine which causes the character to temporarily flash the specified color.
+    private IEnumerator FlashColor(Color flashColor, float duration)
+    {
+        if (duration > 0.0f)
+        {
+            // Gets the sprite renderer of the child object which displays the character sprite.
+            SpriteRenderer spriteRenderer = GetComponentInChildren<SpriteRenderer>();
+            // The original color tint of the sprite renderer.
+            Color originalColor = spriteRenderer.color;
+
+            spriteRenderer.color = flashColor;
+
+            // Pauses the coroutine until the specified duration has passed.
+            yield return new WaitForSeconds(duration);
+
+            spriteRenderer.color = originalColor;
+        }
+        else
+            yield return null;
+    }
+
+    // Called when the script is loaded.
+    private void Awake()
+    {
+        GetComponent<BoxCollider2D>().isTrigger = false;
+        // Sets the enemy rigidbody to be kinematic so that it can be moved programmatically whilst still colliding with the physics objects in the scene.
+        GetComponent<Rigidbody2D>().isKinematic = true;
+    }
+
     // Called when the script is initialised.
     private void Start()
     {
@@ -82,53 +138,5 @@ public class CharacterScript : MonoBehaviour
     {
         UpdateMovement();
         UpdateAttacking();
-
-        OutputDebugData();
-    }
-
-    // Updates the movement of the character.
-    private void UpdateMovement()
-    {
-        if (!isFrozen)
-        {
-            Vector2 movement = new Vector2(Input.GetAxis("Horizontal"), Input.GetAxis("Vertical"));
-            // Clamps the movement magnitude to 1.0f so that the player will move at the same maximum speed in all directions.
-            movement = Vector2.ClampMagnitude(movement, 1.0f);
-
-            this.transform.Translate(movement * MoveSpeed * Time.deltaTime);
-
-            // If the movement direction of the player has changed, updates the normalised heading vector.
-            if (movement.magnitude > 0.0f && heading != movement.normalized)
-                heading = movement.normalized;
-        }
-    }
-
-    // Updates the attacking status of the character.
-    private void UpdateAttacking()
-    {
-        if (Input.GetButtonDown("LightAttack"))
-        {
-            if (!IsAttacking)
-                Attack();
-        }
-    }
-
-    // If the player isn't already attacking, spawns a temporary attack object which will damage enemies with which it collides.
-    private void Attack()
-    {
-        if (!IsAttacking)
-        {
-            // Spawns a new attack object and sets it to be a child of the player character.
-            Transform attackObject = (Transform)Instantiate(AttackPrefab, this.transform.position, Quaternion.identity);
-            attackObject.GetComponent<AttackScript>().InitialiseUsingPlayer(this.transform);
-            attackObject.name = "Player Attack";
-        }
-    }
-
-    // Outputs visual representations and logs of the inner workings of the player object for debugging.
-    private void OutputDebugData()
-    {
-        // Draws a line representing the heading of the player on the scene window.
-        Debug.DrawLine(this.transform.position, (Vector2)this.transform.position + heading, Color.green, Time.deltaTime, false);
-    }
+    }    
 }

@@ -1,7 +1,7 @@
 ﻿//////////////////////////////////////////////////
 // Author/s:            Chris Murphy
 // Date created:        28/03/17
-// Date last edited:    16/04/17
+// Date last edited:    18/04/17
 //////////////////////////////////////////////////
 using UnityEngine;
 using System.Collections;
@@ -18,29 +18,30 @@ public class AttackScript : MonoBehaviour
     // The distance moved by the camera when it is shaking throughout the duration of the attack object being active.
     public float ScreenShakeMagnitude = 0.025f;
 
-    // Initialises the attack object utilising the player character which spawned it.
-    public void InitialiseUsingPlayer(Transform attackingCharacter)
+    // Initialises the attack object utilising the character which spawned it.
+    public void InitialiseUsingCharacter(Transform attackingCharacter)
     {
         // Initialises the attack object if it has not already been initialised.
         if (!isActive)
         {
             this.transform.SetParent(attackingCharacter);
-            // Rotates the attack object to face in the same direction as the heading of player which spawned it.
-            attackingCharacter.GetComponent<PlayerScript>().RotateChildObjectToFacePlayerHeading(this.transform);
+            // Rotates the attack object to face in the same direction as the heading of the character which spawned it.
+            attackingCharacter.GetComponent<CharacterScript>().RotateChildObjectToFaceCharacterHeading(this.transform);
 
-            // Freezes the parent player character in place for the specified duration.
+            // Freezes the parent character in place for the specified duration.
             if (FreezeParentDuration > 0.0f)
-                attackingCharacter.GetComponent<PlayerScript>().Freeze(FreezeParentDuration);
+                attackingCharacter.GetComponent<CharacterScript>().Freeze(FreezeParentDuration);
 
             // Shakes the camera.
             Camera.main.GetComponent<MainCameraScript>().Shake(Duration, ScreenShakeMagnitude);
 
             isActive = true;
         }
-        // Else, throws an exception as two player characters are trying to initialise the same attack object.
+        // Else, throws an exception as the attack object has already been initialised.
         else
-            throw new System.Exception("Player " + attackingCharacter.name + " is attempting to initialise an attack object which has already been initialised.");
+            throw new System.Exception(attackingCharacter.name + " is attempting to initialise an attack object which has already been initialised.");
     }
+
 
     // Whether the attack has been initialied and is now able to damage entities and despawn after the specified duration.
     private bool isActive = false;
@@ -74,7 +75,7 @@ public class AttackScript : MonoBehaviour
         if (isActive)
         {
             if (otherCollider.tag == "Enemy")
-                otherCollider.GetComponent<EnemyScript>().Damage();
+                otherCollider.GetComponent<EnemyCharacterScript>().Damage();
         }
     }
 }

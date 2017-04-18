@@ -1,7 +1,7 @@
 ﻿//////////////////////////////////////////////////
 // Author/s:            Chris Murphy
 // Date created:        02/04/17
-// Date last edited:    16/04/17
+// Date last edited:    18/04/17
 //////////////////////////////////////////////////
 using UnityEngine;
 using System.Collections;
@@ -23,6 +23,7 @@ public class MainCameraScript : MonoBehaviour
         if (!IsShaking && duration > 0.0f && magnitude > 0.0f)
             StartCoroutine(ShakeCoroutine(duration, magnitude));
     }
+
 
     // The amount of time in seconds until the camera stops shaking.
     private float shakeTimer = 0.0f;
