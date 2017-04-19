@@ -1,7 +1,7 @@
 ﻿//////////////////////////////////////////////////
 // Author/s:            Chris Murphy
 // Date created:        16/04/17
-// Date last edited:    18/04/17
+// Date last edited:    1/04/17
 //////////////////////////////////////////////////
 using UnityEngine;
 using System.Collections;
@@ -68,18 +68,7 @@ public abstract class CharacterScript : MonoBehaviour
 
     // An abstract method which will be used to implement the attacking of the character in derived scripts.
     protected abstract void UpdateAttacking();
-
-    // If the character isn't already attacking, spawns a temporary attack object which will damage enemies with which it collides.
-    protected void Attack()
-    {
-        if (!IsAttacking)
-        {
-            // Spawns a new attack object and sets it to be a child of the character.
-            Transform attackObject = (Transform)Instantiate(AttackPrefab, this.transform.position, Quaternion.identity);
-            attackObject.GetComponent<AttackScript>().InitialiseUsingCharacter(this.transform);
-        }
-    }
-
+    
 
     // A coroutine which freezes the character in place for the specified duration, then unfreezes it.
     private IEnumerator FreezeCoroutine(float duration)

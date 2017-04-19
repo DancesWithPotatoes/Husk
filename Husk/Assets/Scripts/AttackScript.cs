@@ -1,7 +1,7 @@
 ﻿//////////////////////////////////////////////////
 // Author/s:            Chris Murphy
 // Date created:        28/03/17
-// Date last edited:    18/04/17
+// Date last edited:    19/04/17
 //////////////////////////////////////////////////
 using UnityEngine;
 using System.Collections;
@@ -11,15 +11,22 @@ using System.Collections;
 // A script used to control a temporary attack collider object spawned by a character in the game.
 public class AttackScript : MonoBehaviour
 {
+    // Enumerated values representing the different groups of characters which the attack object can effect.
+    public enum CharacterDamageGroup
+    {
+        Player,
+        Enemy
+    }
+
     // The amount of time in seconds for which the attack object exists before self-destructing.
     public float Duration = 0.2f;
-    // The amount of time for which the attack freezes the game character that it is a child of in place after being spawned.
-    public float FreezeParentDuration = 0.2f;
+    // The amount of time for which the attack freezes the game character that created it of in place after being spawned.
+    public float FreezeAttackerDuration = 0.2f;
     // The distance moved by the camera when it is shaking throughout the duration of the attack object being active.
     public float ScreenShakeMagnitude = 0.025f;
 
     // Initialises the attack object utilising the character which spawned it.
-    public void InitialiseUsingCharacter(Transform attackingCharacter)
+    public void InitialiseUsingCharacter(Transform attackingCharacter, CharacterDamageGroup characterDamageGroup)
     {
         // Initialises the attack object if it has not already been initialised.
         if (!isActive)
@@ -28,9 +35,12 @@ public class AttackScript : MonoBehaviour
             // Rotates the attack object to face in the same direction as the heading of the character which spawned it.
             attackingCharacter.GetComponent<CharacterScript>().RotateChildObjectToFaceCharacterHeading(this.transform);
 
+            // Sets the group of characters which the attack will damage.
+            this.damageGroup = characterDamageGroup;
+
             // Freezes the parent character in place for the specified duration.
-            if (FreezeParentDuration > 0.0f)
-                attackingCharacter.GetComponent<CharacterScript>().Freeze(FreezeParentDuration);
+            if (FreezeAttackerDuration > 0.0f)
+                attackingCharacter.GetComponent<CharacterScript>().Freeze(FreezeAttackerDuration);
 
             // Shakes the camera.
             Camera.main.GetComponent<MainCameraScript>().Shake(Duration, ScreenShakeMagnitude);
@@ -43,6 +53,8 @@ public class AttackScript : MonoBehaviour
     }
 
 
+    // The group of characters which the attack object will damage.
+    private CharacterDamageGroup damageGroup;
     // Whether the attack has been initialied and is now able to damage entities and despawn after the specified duration.
     private bool isActive = false;
     // The amount of time in seconds which the attack object has existed since being spawned.
@@ -72,10 +84,13 @@ public class AttackScript : MonoBehaviour
     // Called when another object enters the trigger collider of the attack object.
     private void OnTriggerEnter2D(Collider2D otherCollider)
     {
-        if (isActive)
+        // If the other collider belongs to a character, attempts to damage it.
+        if (isActive && otherCollider.GetComponent<CharacterScript>() != null)
         {
-            if (otherCollider.tag == "Enemy")
-                otherCollider.GetComponent<EnemyCharacterScript>().Damage();
+            // Ensures that the attack object will only damage the correct group of characters.
+            if (damageGroup == CharacterDamageGroup.Player && otherCollider.GetComponent<PlayerCharacterScript>() != null ||
+                damageGroup == CharacterDamageGroup.Enemy && otherCollider.GetComponent<EnemyCharacterScript>() != null)
+                otherCollider.GetComponent<CharacterScript>().Damage();
         }
     }
 }

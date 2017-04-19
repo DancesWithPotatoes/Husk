@@ -1,7 +1,7 @@
 ﻿//////////////////////////////////////////////////
 // Author/s:            Chris Murphy
 // Date created:        18/04/17
-// Date last edited:    18/04/17
+// Date last edited:    19/04/17
 //////////////////////////////////////////////////
 using UnityEngine;
 using System.Collections;
@@ -33,6 +33,18 @@ public class PlayerCharacterScript : CharacterScript
         {
             if (!IsAttacking)
                 Attack();
+        }
+    }
+
+
+    // If the player isn't already attacking, spawns a temporary attack object which will damage enemies with which it collides.
+    private void Attack()
+    {
+        if (!IsAttacking)
+        {
+            // Spawns a new attack object and sets it to be a child of the character.
+            Transform attackObject = (Transform)Instantiate(AttackPrefab, this.transform.position, Quaternion.identity);
+            attackObject.GetComponent<AttackScript>().InitialiseUsingCharacter(this.transform, AttackScript.CharacterDamageGroup.Enemy);
         }
     }
 }
