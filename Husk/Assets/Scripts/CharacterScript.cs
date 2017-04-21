@@ -1,7 +1,7 @@
 ﻿//////////////////////////////////////////////////
 // Author/s:            Chris Murphy
 // Date created:        16/04/17
-// Date last edited:    1/04/17
+// Date last edited:    21/04/17
 //////////////////////////////////////////////////
 using UnityEngine;
 using System.Collections;
@@ -22,15 +22,24 @@ public abstract class CharacterScript : MonoBehaviour
         get { return heading; }
     }
 
-    // The property used to get whether the currently has a child attack object spawned.
+    // The property used to get whether the character currently has a child attack object spawned.
     public bool IsAttacking
     {
         get { return (this.transform.GetComponentInChildren<AttackScript>() != null); }
     }
 
+    // The property used to get whether the character is currently flashing a color.
+    public bool IsFlashing
+    {
+        get { return isFlashing; }
+    }
+
     // Damages the character.
     public void Damage()
     {
+        if (IsFlashing)
+            StopFlashing();
+
         StartCoroutine(FlashColor(Color.red, 0.2f));
     }
 
@@ -63,12 +72,130 @@ public abstract class CharacterScript : MonoBehaviour
     // Whether or not the character is currently frozen in place.
     protected bool isFrozen;
 
+    // A coroutine which causes the character to temporarily flash the specified color.
+    protected IEnumerator FlashColor(Color flashColor, float duration)
+    {
+        if (!isFlashing)
+        {
+            if (duration > 0.0f)
+            {
+                isFlashing = true;
+
+                // Gets the sprite renderer of the child object which displays the character sprite.
+                SpriteRenderer spriteRenderer = GetComponentInChildren<SpriteRenderer>();
+                // The original color tint of the sprite renderer.
+                Color originalColor = spriteRenderer.color;
+
+                spriteRenderer.color = flashColor;
+
+                // The amount of time in seconds for which the character has been flashing.
+                float flashTimer = 0.0f;
+                // Pauses the coroutine until the specified duration has passed.
+                while (flashTimer < duration)
+                {
+                    // If the 'flashing' flag is still true, remains the flashing color.
+                    if (IsFlashing)
+                    {
+                        flashTimer += Time.deltaTime;
+                        yield return null;
+                    }
+                    // Else if the 'flashing' flag has been set to false during the execution of the coroutine via the StopFlashing() method, cuts it short to stop the character from flashing.
+                    else
+                        break;
+                }
+                
+                spriteRenderer.color = originalColor;
+
+                isFlashing = false;
+            }
+            else
+                yield return null;
+        }
+        else
+            throw new System.Exception("Character " + this.name + " is already flashing a color.");
+    }
+    // A coroutine which causes the character to gradually transition to and then flash the specified color.
+    protected IEnumerator FlashColor(Color flashColor, float transitionDuration, float flashDuration)
+    {
+        if (!isFlashing)
+        {
+            if (flashDuration > 0.0f)
+            {
+                isFlashing = true;
+
+                // Gets the sprite renderer of the child object which displays the character sprite.
+                SpriteRenderer spriteRenderer = GetComponentInChildren<SpriteRenderer>();
+                // The original color tint of the sprite renderer.
+                Color originalColor = spriteRenderer.color;
+
+                if (transitionDuration > 0.0f)
+                {
+                    // The timer used to record how many seconds the sprite tint has been transitioning towards the final flash color.
+                    float transitionTimer = 0.0f;
+                    // A loop which lerps the sprite color from the original to the flash color throughout the specified duration.
+                    while (transitionTimer < transitionDuration)
+                    {
+                        // If the 'flashing' flag is still true, continues lerping towards the flashing color.
+                        if (IsFlashing)
+                        {
+                            spriteRenderer.color = Color.Lerp(originalColor, flashColor, transitionTimer / transitionDuration);
+
+                            transitionTimer += Time.deltaTime;
+
+                            yield return null;
+
+                        }
+                        // Else if the 'flashing' flag has been set to false during the execution of the coroutine via the StopFlashing() method, cuts it short to stop the character from flashing.
+                        else
+                            break;
+                    }
+                }
+
+                spriteRenderer.color = flashColor;
+
+                // The amount of time in seconds for which the character has been flashing.
+                float flashTimer = 0.0f;
+                // Pauses the coroutine until the specified duration has passed.
+                while (flashTimer < flashDuration)
+                {
+                    // If the 'flashing' flag is still true, remains the flashing color.
+                    if (isFlashing)
+                    {
+                        flashTimer += Time.deltaTime;
+                        yield return null;
+                    }
+                    // Else if the 'flashing' flag has been set to false during the execution of the coroutine, cuts it short to stop the character from flashing.
+                    else
+                        break;
+                }
+
+                spriteRenderer.color = originalColor;
+
+                isFlashing = false;
+            }
+            else
+                yield return null;
+        }
+        else
+            throw new System.Exception("Character " + this.name + " is already flashing a color.");
+    }
+
+    // Stops the character from continuing to flash if it is currently doing so.
+    protected void StopFlashing()
+    {
+        // Changes the 'flashing' flag, which in turn will end any FlashColor coroutine which is currently running.
+        isFlashing = false;
+    }
+
     // An abstract method which will be used to implement the movement of the character in derived scripts.
     protected abstract void UpdateMovement();
 
     // An abstract method which will be used to implement the attacking of the character in derived scripts.
     protected abstract void UpdateAttacking();
-    
+
+
+    // Whether the character is currently in the process of flashing a color.
+    private bool isFlashing;
 
     // A coroutine which freezes the character in place for the specified duration, then unfreezes it.
     private IEnumerator FreezeCoroutine(float duration)
@@ -84,28 +211,7 @@ public abstract class CharacterScript : MonoBehaviour
         }
         else
             yield return null;
-    }
-
-    // A coroutine which causes the character to temporarily flash the specified color.
-    private IEnumerator FlashColor(Color flashColor, float duration)
-    {
-        if (duration > 0.0f)
-        {
-            // Gets the sprite renderer of the child object which displays the character sprite.
-            SpriteRenderer spriteRenderer = GetComponentInChildren<SpriteRenderer>();
-            // The original color tint of the sprite renderer.
-            Color originalColor = spriteRenderer.color;
-
-            spriteRenderer.color = flashColor;
-
-            // Pauses the coroutine until the specified duration has passed.
-            yield return new WaitForSeconds(duration);
-
-            spriteRenderer.color = originalColor;
-        }
-        else
-            yield return null;
-    }
+    }    
 
     // Called when the script is loaded.
     private void Awake()
@@ -120,6 +226,7 @@ public abstract class CharacterScript : MonoBehaviour
     {
         isFrozen = false;
         heading = Vector2.down;
+        isFlashing = false;
     }
 
     // Called each frame and used to update gameplay logic.
@@ -127,5 +234,5 @@ public abstract class CharacterScript : MonoBehaviour
     {
         UpdateMovement();
         UpdateAttacking();
-    }    
+    }
 }

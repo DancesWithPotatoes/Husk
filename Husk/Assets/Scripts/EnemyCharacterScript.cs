@@ -1,7 +1,7 @@
 ﻿//////////////////////////////////////////////////
 // Author/s:            Chris Murphy
 // Date created:        18/03/17
-// Date last edited:    19/04/17
+// Date last edited:    21/04/17
 //////////////////////////////////////////////////
 using UnityEngine;
 using System.Collections;
@@ -26,6 +26,10 @@ public class EnemyCharacterScript : CharacterScript
     protected override void UpdateAttacking()
     {
         attackTimer += Time.deltaTime;
+
+        if(!IsFlashing && Input.GetKeyDown(KeyCode.Space))
+            StartCoroutine(FlashColor(Color.white, (AttackRate / 2.0f), 0.2f));
+
         if (attackTimer >= AttackRate)
         {
             Attack();
