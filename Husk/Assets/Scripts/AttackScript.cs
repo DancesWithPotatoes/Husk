@@ -1,17 +1,17 @@
 ﻿//////////////////////////////////////////////////
 // Author/s:            Chris Murphy
 // Date created:        28/03/17
-// Date last edited:    19/04/17
+// Date last edited:    22/04/17
 //////////////////////////////////////////////////
 using UnityEngine;
 using System.Collections;
 
 [RequireComponent(typeof(Collider2D))]
 [RequireComponent(typeof(Rigidbody2D))]
-// A script used to control a temporary attack collider object spawned by a character in the game.
+// A script used to control a temporary attack collider object spawned by a character in the game to damage other characters.
 public class AttackScript : MonoBehaviour
 {
-    // Enumerated values representing the different groups of characters which the attack object can effect.
+    // Enumerated values representing the different groups of characters which the attack object can damage.
     public enum CharacterDamageGroup
     {
         Player,
@@ -19,46 +19,46 @@ public class AttackScript : MonoBehaviour
     }
 
     // The amount of time in seconds for which the attack object exists before self-destructing.
-    public float Duration = 0.2f;
-    // The amount of time for which the attack freezes the game character that created it of in place after being spawned.
-    public float FreezeAttackerDuration = 0.2f;
-    // The distance moved by the camera when it is shaking throughout the duration of the attack object being active.
-    public float ScreenShakeMagnitude = 0.025f;
+    public float ExistDuration;
+    // The amount of time for which the character that spawned the attack is frozen in place after doing so.
+    public float FreezeAttackerDuration;
+    // The magnitude of the camera shake which exists throughout the lifetime of the attack object.
+    public float ScreenShakeMagnitude;
 
-    // Initialises the attack object utilising the character which spawned it.
+    // Initialises the attack object utilising the character which spawned it - must be called instantly after the attack object has been spawned, otherwise an exception will be thrown.
     public void InitialiseUsingCharacter(Transform attackingCharacter, CharacterDamageGroup characterDamageGroup)
     {
-        // Initialises the attack object if it has not already been initialised.
-        if (!isActive)
-        {
-            this.transform.SetParent(attackingCharacter);
-            // Rotates the attack object to face in the same direction as the heading of the character which spawned it.
-            attackingCharacter.GetComponent<CharacterScript>().RotateChildObjectToFaceCharacterHeading(this.transform);
+        // Ensures that the attack-spawning object is a valid game character and that the attack object hasn't already been initialised.
+        if (!attackingCharacter.GetComponent<CharacterScript>())
+            throw new System.ArgumentException("The attack object must be initialised using an object which has a derivative of CharacterScript attached as a component.");
+        if (isInitialised)
+            throw new System.InvalidOperationException("The attack object has already been initialised.");
 
-            // Sets the group of characters which the attack will damage.
-            this.damageGroup = characterDamageGroup;
+        this.transform.SetParent(attackingCharacter);
+        // Rotates the attack object to face in the same direction as the heading of the character which spawned it.
+        attackingCharacter.GetComponent<CharacterScript>().RotateChildObjectToFaceCharacterHeading(this.transform);
+        // Freezes the parent character in place for the specified duration.
+        if (FreezeAttackerDuration > 0.0f)
+            attackingCharacter.GetComponent<CharacterScript>().Freeze(FreezeAttackerDuration);
 
-            // Freezes the parent character in place for the specified duration.
-            if (FreezeAttackerDuration > 0.0f)
-                attackingCharacter.GetComponent<CharacterScript>().Freeze(FreezeAttackerDuration);
+        // Sets the group of characters which the attack will damage.
+        this.damageGroup = characterDamageGroup;
 
-            // Shakes the camera.
-            Camera.main.GetComponent<MainCameraScript>().Shake(Duration, ScreenShakeMagnitude);
+        // Shakes the camera.
+        if (Camera.main.GetComponent<MainCameraScript>().IsShaking)
+            Camera.main.GetComponent<MainCameraScript>().StopShaking();
+        Camera.main.GetComponent<MainCameraScript>().Shake(ExistDuration, ScreenShakeMagnitude);
 
-            isActive = true;
-        }
-        // Else, throws an exception as the attack object has already been initialised.
-        else
-            throw new System.Exception(attackingCharacter.name + " is attempting to initialise an attack object which has already been initialised.");
+        isInitialised = true;
     }
 
 
     // The group of characters which the attack object will damage.
     private CharacterDamageGroup damageGroup;
-    // Whether the attack has been initialied and is now able to damage entities and despawn after the specified duration.
-    private bool isActive = false;
-    // The amount of time in seconds which the attack object has existed since being spawned.
-    private float destructionTimer = 0.0f;
+    // Whether the attack has been initialised and is now able to damage entities and despawn after the specified duration.
+    private bool isInitialised;
+    // The amount of time in seconds for which the attack object has existed since being spawned.
+    private float destructionTimer;
 
     // Called when the script is loaded.
     private void Awake()
@@ -69,23 +69,30 @@ public class AttackScript : MonoBehaviour
         GetComponent<Rigidbody2D>().isKinematic = true;
     }
 
+    // Called when the script is initialised.
+    private void Start()
+    {
+        isInitialised = false;
+        destructionTimer = 0.0f;
+    }
+
     // Called each frame and used to update gameplay logic.
     private void Update()
     {
-        if (isActive)
-        {
-            destructionTimer += Time.deltaTime;
+        // Ensures that the attack object has been properly initialised.
+        if (isInitialised == false)
+            throw new System.InvalidOperationException("The attack object must be initialised using the InitialiseUsingCharacter() method directly after being spawned.");
 
-            if (destructionTimer >= Duration)
-                Destroy(this.gameObject);
-        }
+        destructionTimer += Time.deltaTime;
+        if (destructionTimer >= ExistDuration)
+            Destroy(this.gameObject);
     }
 
     // Called when another object enters the trigger collider of the attack object.
     private void OnTriggerEnter2D(Collider2D otherCollider)
     {
         // If the other collider belongs to a character, attempts to damage it.
-        if (isActive && otherCollider.GetComponent<CharacterScript>() != null)
+        if (isInitialised && otherCollider.GetComponent<CharacterScript>() != null)
         {
             // Ensures that the attack object will only damage the correct group of characters.
             if (damageGroup == CharacterDamageGroup.Player && otherCollider.GetComponent<PlayerCharacterScript>() != null ||
