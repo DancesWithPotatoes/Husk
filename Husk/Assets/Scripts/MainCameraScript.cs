@@ -1,7 +1,7 @@
 ﻿//////////////////////////////////////////////////
 // Author/s:            Chris Murphy
 // Date created:        02/04/17
-// Date last edited:    22/04/17
+// Date last edited:    24/04/17
 //////////////////////////////////////////////////
 using UnityEngine;
 using System.Collections;
@@ -13,56 +13,61 @@ public class MainCameraScript : MonoBehaviour
     // The property used to get if the camera is currently shaking.
     public bool IsShaking
     {
-        get { return (shakeTimer > 0.0f); }
+        // shakeCoroutine will have a value if ShakeCoroutine() is running, else it will always be equal to null.
+        get { return (shakeCoroutine != null); }
     }
 
     // Causes the camera to shake.
     public void Shake(float duration, float magnitude)
     {
-        StartCoroutine(ShakeCoroutine(duration, magnitude));
+        shakeCoroutine = StartCoroutine(ShakeCoroutine(duration, magnitude));
     }
 
     // Stops the camera from shaking if it is currently doing so.
     public void StopShaking()
     {
-        // Ensures that the camera is currently shaking.
-        if (IsShaking == false)
-            throw new System.InvalidOperationException("The camera is not currently shaking.");
+        // Ensures that the camera is currently shaking and thus that ShakeCoroutine() is currently running.
+        if (!IsShaking)
+            throw new System.InvalidOperationException("The camera isn't currently shaking.");
 
-        // Resets the shake timer which will end the shaking loop within ShakeCoroutine().
-        shakeTimer = 0.0f;
+        StopCoroutine(shakeCoroutine);
+        shakeCoroutine = null;
+
+        // Resets the camera to it's original position.
+        this.transform.position = defaultPosition;
     }
+    
 
-
-    // The amount of time in seconds until the camera stops shaking.
-    private float shakeTimer;
+    // The coroutine which is currently causing the camera to shake.
+    private Coroutine shakeCoroutine;
+    // The default world position of the camera when it isn't shaking.
+    private Vector3 defaultPosition;
 
     // Called when the script is initialised.
     private void Start()
     {
-        shakeTimer = 0.0f;
+        defaultPosition = this.transform.position;
     }
 
-    // A coroutine which causes the camera to shake for the specified duration.
+
+    // A coroutine which causes the camera to shake.
     private IEnumerator ShakeCoroutine(float duration, float magnitude)
     {
-        // Ensures that the camera isn't already shaking and that the specified parameters are valid.
+        // Ensures that the camera isn't already shaking and that the given shake duration and magnitide values are valid.
         if (IsShaking)
             throw new System.InvalidOperationException("The camera is already shaking.");
         else if (duration <= 0.0f)
-            throw new System.ArgumentException("The duration of the camera-shaking action must be greater than zero.");
+            throw new System.ArgumentOutOfRangeException("The duration of the camera-shaking action must be greater than zero.");
         else if (magnitude <= 0.0f)
-            throw new System.ArgumentException("The magnitude of the camera-shaking action must be greater than zero.");
+            throw new System.ArgumentOutOfRangeException("The magnitude of the camera-shaking action must be greater than zero.");
 
-        // The initial position of the camera before it starts shaking.
-        Vector3 originalPosition = this.transform.position;
-        shakeTimer = duration;
-
+        // A timer used to store the elapsed time in seconds for which the camera has been shaking during the execution of this coroutine.
+        float shakeTimer = 0.0f;
         // A loop which causes the camera to continually shake until the timer has run out.
-        while (shakeTimer > 0.0f)
+        while (shakeTimer < duration)
         {
             // If the camera is currently in it's original position, moves it in a random direction the distance specified by the magnitude parameter.
-            if (this.transform.position == originalPosition)
+            if (this.transform.position == defaultPosition)
             {
                 // The random direction in which the camera will move during this loop.
                 Vector2 shakeDirection = new Vector2(Random.Range(-1.0f, 1.0f), Random.Range(-1.0f, 1.0f));
@@ -70,16 +75,15 @@ public class MainCameraScript : MonoBehaviour
 
                 this.transform.Translate(shakeDirection * magnitude);
             }
-            // Else if the camera is not in it's original position, returns it to this position
+            // Else if the camera is not in it's original position, returns it to that position
             else
-                this.transform.position = originalPosition;
+                this.transform.position = defaultPosition;
 
-            shakeTimer -= Time.deltaTime;
+            shakeTimer += Time.deltaTime;
             yield return null;
         }
-
-        // Returns the camera to it's original position once the loop is complete and resets the timer.
-        this.transform.position = originalPosition;
-        shakeTimer = 0.0f;
+        
+        // Calls the StopShaking() method so that shakeCoroutine will be set to null when this coroutine finishes, meaning that it will always be null unless this coroutine is running.
+        StopShaking();
     }
 }
