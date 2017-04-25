@@ -9,14 +9,9 @@ using System.Collections;
 // A script used to handle the actions of a player-controlled character derived from the abstract Character script.
 public class PlayerCharacterScript : CharacterScript
 {
-    // Damages the player character.
-    public override void Damage()
+    // Called when the player character has been damaged.
+    protected override void DamageSupplement()
     {
-        // Causes the character to flash red.
-        if (IsColorFlashing)
-            StopColorFlashing();
-        FlashColor(Color.red, 0.2f);
-
         // The script used to control the main camera.
         MainCameraScript cameraScript = Camera.main.GetComponent<MainCameraScript>();
         // Shakes the camera.
@@ -24,7 +19,6 @@ public class PlayerCharacterScript : CharacterScript
             cameraScript.StopShaking();
         cameraScript.Shake(0.2f, 0.05f);
     }
-
 
     // Updates the movement of the player character.
     protected override void UpdateMovement()

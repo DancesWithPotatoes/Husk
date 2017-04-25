@@ -45,8 +45,16 @@ public abstract class CharacterScript : MonoBehaviour
         get { return (colorFlashCoroutine != null); }
     }
 
-    // An abstract method which will be used to damage the character when implemented.
-    public abstract void Damage();
+    // Damages the character.
+    public void Damage()
+    {
+        // Causes the character to flash red.
+        if (IsColorFlashing)
+            StopColorFlashing();
+        FlashColor(Color.red, 0.2f);
+
+        DamageSupplement();
+    }
 
     // Freezes the character in place for the specified duration.
     public void Freeze(float duration)
@@ -104,8 +112,16 @@ public abstract class CharacterScript : MonoBehaviour
     }
 
 
+    // The default color tint of the character's SpriteRenderer component.
+    protected Color defaultSpriteRendererColor;
     // A normalised vector representing the direction in which the character is currently facing.
     protected Vector2 heading;
+
+    // An empty virtual method which can be used by derived classes to add extra functionality to the Damage() method.
+    protected virtual void DamageSupplement() { }
+
+    // An empty virtual method which can be used by derived classes to add extra functionality to the Awake() method.
+    protected virtual void AwakeSupplement() { }
 
     // An abstract method which will be used to implement the movement of the character in derived scripts.
     protected abstract void UpdateMovement();
@@ -114,8 +130,6 @@ public abstract class CharacterScript : MonoBehaviour
     protected abstract void UpdateAttacking();
 
 
-    // The default color tint of the character's SpriteRenderer component.
-    private Color defaultSpriteRendererColor;
     // The coroutine which is currently causing the character to be frozen.
     private Coroutine freezeCoroutine;
     // The coroutine which is currently causing the character to color flash.
@@ -227,6 +241,8 @@ public abstract class CharacterScript : MonoBehaviour
         GetComponent<Rigidbody2D>().isKinematic = true;
         // Stores the initial color of the character sprite.
         defaultSpriteRendererColor = GetComponentInChildren<SpriteRenderer>().color;
+
+        AwakeSupplement();
     }
 
     // Called when the script is initialised.
