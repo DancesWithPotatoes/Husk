@@ -1,7 +1,7 @@
 ﻿//////////////////////////////////////////////////
 // Author/s:            Chris Murphy
 // Date created:        28/03/17
-// Date last edited:    24/04/17
+// Date last edited:    25/04/17
 //////////////////////////////////////////////////
 using UnityEngine;
 using System.Collections;
@@ -18,6 +18,9 @@ public class AttackScript : MonoBehaviour
         Enemy
     }
 
+    // Whether or not the attack object is currently locked into an unchanging state.
+    [HideInInspector]
+    public bool IsPaused;
     // The amount of time in seconds for which the attack object exists before self-destructing.
     public float ExistDuration;
     // The amount of time for which the character that spawned the attack is frozen in place after doing so.
@@ -86,10 +89,16 @@ public class AttackScript : MonoBehaviour
         GetComponent<Rigidbody2D>().isKinematic = true;
     }
 
+    // Called when the script is initialised.
+    private void Start()
+    {
+        IsPaused = false;
+    }
+
     // Called each frame and used to update gameplay logic.
     private void Update()
     {
-        if (isInitialised)
+        if (isInitialised && !IsPaused)
         {
             destructionTimer += Time.deltaTime;
 
@@ -102,7 +111,7 @@ public class AttackScript : MonoBehaviour
     private void OnTriggerEnter2D(Collider2D otherCollider)
     {
         // If the other collider belongs to a character, attempts to damage it.
-        if (isInitialised && otherCollider.GetComponent<CharacterScript>() != null)
+        if (isInitialised && !IsPaused && otherCollider.GetComponent<CharacterScript>() != null)
         {
             // Ensures that the attack object will only damage the correct group of characters.
             if (damageGroup == CharacterDamageGroup.Player && otherCollider.GetComponent<PlayerCharacterScript>() != null ||

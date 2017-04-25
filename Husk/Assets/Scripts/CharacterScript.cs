@@ -13,6 +13,9 @@ public abstract class CharacterScript : MonoBehaviour
 {
     // The prefab used which allows the character to spawn an attack object to damage enemy characters.
     public Transform AttackPrefab;
+    // Whether or not the character is currently locked into an unchanging state.
+    [HideInInspector]
+    public bool IsPaused;
     // The maximum movement speed of the character.
     public float MoveSpeed;
 
@@ -103,7 +106,7 @@ public abstract class CharacterScript : MonoBehaviour
 
     // A normalised vector representing the direction in which the character is currently facing.
     protected Vector2 heading;
-            
+
     // An abstract method which will be used to implement the movement of the character in derived scripts.
     protected abstract void UpdateMovement();
 
@@ -121,14 +124,24 @@ public abstract class CharacterScript : MonoBehaviour
     // A coroutine which freezes the character in place for the specified duration, then unfreezes it.
     private IEnumerator FreezeCoroutine(float duration)
     {
-        // Ensures that the character isn't already frozen and that the given freeze duration is valid.
+        if (IsPaused)
+            throw new System.InvalidOperationException("The character can't be frozen when paused.");
         if (IsFrozen)
             throw new System.InvalidOperationException("The character is already frozen.");
         if (duration <= 0.0f)
             throw new System.ArgumentOutOfRangeException("The specified duration to freeze the character must be greater than zero.");
 
-        // Pauses the coroutine until the specified duration has passed - throughout this period freezeCoroutine will have a value, which means the IsFrozen property will return true.
-        yield return new WaitForSeconds(duration);
+        // A timer used to store how long the coroutine has been waiting since the character was initially frozen.
+        float waitTimer = 0.0f;
+        // A pause-friendly loop which causes the coroutine to wait until the specified duration has passed - throughout this period freezeCoroutine will have a value, which means the IsFrozen property will return true.
+        while (waitTimer < duration)
+        {
+            // Progresses through the loop if the character is currently unpaused.
+            if (!IsPaused)
+                waitTimer += Time.deltaTime;
+
+            yield return null;
+        }
 
         // Calls the Unfreeze() method so that freezeCoroutine will be set to null when this coroutine finishes, meaning that it will always be null unless an overload of this coroutine is running.
         Unfreeze();
@@ -147,8 +160,17 @@ public abstract class CharacterScript : MonoBehaviour
         SpriteRenderer spriteRenderer = GetComponentInChildren<SpriteRenderer>();
         spriteRenderer.color = flashColor;
 
-        // Pauses the coroutine until the specified duration has passed.
-        yield return new WaitForSeconds(duration);
+        // A timer used to store how long the coroutine has been waiting since the character changed color.
+        float waitTimer = 0.0f;
+        // A pause-friendly loop which causes the coroutine to wait until the specified duration has passed - throughout this period flashColorCoroutine will have a value, which means the IsColorFlashing property will return true.
+        while (waitTimer < duration)
+        {
+            // Progresses through the loop if the character is currently unpaused.
+            if (!IsPaused)
+                waitTimer += Time.deltaTime;
+
+            yield return null;
+        }
 
         // Calls the StopColorFlashing() method so that colorFlashCoroutine will be set to null when this coroutine finishes, meaning that it will always be null unless an overload of this coroutine is running.
         StopColorFlashing();
@@ -174,12 +196,24 @@ public abstract class CharacterScript : MonoBehaviour
         {
             spriteRenderer.color = Color.Lerp(defaultSpriteRendererColor, flashColor, colorChangeTimer / colorChangeDuration);
 
-            colorChangeTimer += Time.deltaTime;
+            // Progresses through the loop if the character is currently unpaused.
+            if (!IsPaused)
+                colorChangeTimer += Time.deltaTime;
+
             yield return null;
         }
 
-        // Pauses the coroutine until the specified flash duration has passed.
-        yield return new WaitForSeconds(flashDuration);
+        // A timer used to store how long the coroutine has been waiting since the character was changed to the flash color.
+        float waitTimer = 0.0f;
+        // A pause-friendly loop which causes the coroutine to wait until the specified duration has passed - throughout this period flashColorCoroutine will have a value, which means the IsColorFlashing property will return true.
+        while (waitTimer < flashDuration)
+        {
+            // Progresses through the loop if the character is currently unpaused.
+            if (!IsPaused)
+                waitTimer += Time.deltaTime;
+
+            yield return null;
+        }
 
         // Calls the StopColorFlashing() method so that colorFlashCoroutine will be set to null when this coroutine finishes, meaning that it will always be null unless an overload of this coroutine is running.
         StopColorFlashing();
@@ -198,6 +232,7 @@ public abstract class CharacterScript : MonoBehaviour
     // Called when the script is initialised.
     private void Start()
     {
+        IsPaused = false;
         heading = Vector2.down;
         freezeCoroutine = null;
         colorFlashCoroutine = null;
@@ -206,7 +241,10 @@ public abstract class CharacterScript : MonoBehaviour
     // Called each frame and used to update gameplay logic.
     private void Update()
     {
-        UpdateMovement();
-        UpdateAttacking();
+        if (!IsPaused)
+        {
+            UpdateMovement();
+            UpdateAttacking();
+        }
     }
 }

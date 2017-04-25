@@ -25,6 +25,7 @@ public class PlayerCharacterScript : CharacterScript
         cameraScript.Shake(0.2f, 0.05f);
     }
 
+
     // Updates the movement of the player character.
     protected override void UpdateMovement()
     {
