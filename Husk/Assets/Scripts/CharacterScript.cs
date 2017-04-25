@@ -1,7 +1,7 @@
 ﻿//////////////////////////////////////////////////
 // Author/s:            Chris Murphy
 // Date created:        16/04/17
-// Date last edited:    24/04/17
+// Date last edited:    25/04/17
 //////////////////////////////////////////////////
 using UnityEngine;
 using System.Collections;
@@ -42,14 +42,8 @@ public abstract class CharacterScript : MonoBehaviour
         get { return (colorFlashCoroutine != null); }
     }
 
-    // Damages the character.
-    public virtual void Damage()
-    {
-        // Causes the character to flash red.
-        if (IsColorFlashing)
-            StopColorFlashing();
-        FlashColor(Color.red, 0.2f);
-    }
+    // An abstract method which will be used to damage the character when implemented.
+    public abstract void Damage();
 
     // Freezes the character in place for the specified duration.
     public void Freeze(float duration)

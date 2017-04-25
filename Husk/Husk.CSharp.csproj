@@ -69,6 +69,7 @@
     <Compile Include="Assets\Scripts\EnemyCharacterScript.cs" />
     <Compile Include="Assets\Scripts\MainCameraScript.cs" />
     <Compile Include="Assets\Scripts\PlayerCharacterScript.cs" />
+    <Compile Include="Assets\Scripts\SceneControllerScript.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\SyntaxTree\UnityVS\2013\UnityVS.CSharp.targets" />
 </Project>
