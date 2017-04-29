@@ -1,14 +1,14 @@
 ﻿//////////////////////////////////////////////////
 // Author/s:            Chris Murphy
 // Date created:        28/03/17
-// Date last edited:    25/04/17
+// Date last edited:    29/04/17
 //////////////////////////////////////////////////
 using UnityEngine;
 using System.Collections;
 
 [RequireComponent(typeof(Collider2D))]
 [RequireComponent(typeof(Rigidbody2D))]
-// A script used to control a temporary attack collider object spawned by a character in the game to damage other characters.
+// A script used to control a temporary attack object spawned by a character to damage other characters.
 public class AttackScript : MonoBehaviour
 {
     // Enumerated values representing the different groups of characters which the attack object can damage.
@@ -78,7 +78,7 @@ public class AttackScript : MonoBehaviour
     // Whether the attack has been initialised and is now able to damage entities and despawn after the specified duration.
     private bool isInitialised = false;
     // The amount of time in seconds for which the attack object has existed since being spawned.
-    private float destructionTimer = 0.0f;
+    private float existanceTimer = 0.0f;
 
     // Called when the script is loaded.
     private void Awake()
@@ -100,9 +100,9 @@ public class AttackScript : MonoBehaviour
     {
         if (isInitialised && !IsPaused)
         {
-            destructionTimer += Time.deltaTime;
+            existanceTimer += Time.deltaTime;
 
-            if (destructionTimer >= ExistDuration)
+            if (existanceTimer >= ExistDuration)
                 Destroy(this.gameObject);
         }
     }

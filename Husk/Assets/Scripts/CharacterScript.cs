@@ -1,7 +1,7 @@
 ﻿//////////////////////////////////////////////////
 // Author/s:            Chris Murphy
 // Date created:        16/04/17
-// Date last edited:    25/04/17
+// Date last edited:    29/04/17
 //////////////////////////////////////////////////
 using UnityEngine;
 using System.Collections;
@@ -11,8 +11,7 @@ using System.Collections;
 // An abstract script which when derived will be used to handle the actions of a character within the world that can attack, move, and be damaged by other character-derived objects.
 public abstract class CharacterScript : MonoBehaviour
 {
-    // The prefab used which allows the character to spawn an attack object to damage enemy characters.
-    public Transform AttackPrefab;
+    
     // Whether or not the character is currently locked into an unchanging state.
     [HideInInspector]
     public bool IsPaused;
@@ -82,6 +81,11 @@ public abstract class CharacterScript : MonoBehaviour
     public void FlashColor(Color color, float colorChangeDuration, float flashDuration)
     {
         colorFlashCoroutine = StartCoroutine(FlashColorCoroutine(color, colorChangeDuration, flashDuration));
+    }
+    // Causes the character to to gradually change to, flash, and then change back from the specified color.
+    public void FlashColor(Color color, float changeToFlashColorDuration, float flashDuration, float changeToOriginalColorDuration)
+    {
+        colorFlashCoroutine = StartCoroutine(FlashColorCoroutine(color, changeToFlashColorDuration, flashDuration, changeToOriginalColorDuration));
     }
 
     // Stops the character from flashing a color if it is currently doing so.
@@ -232,6 +236,65 @@ public abstract class CharacterScript : MonoBehaviour
         // Calls the StopColorFlashing() method so that colorFlashCoroutine will be set to null when this coroutine finishes, meaning that it will always be null unless an overload of this coroutine is running.
         StopColorFlashing();
     }
+    // A coroutine which causes the character to gradually change to, flash, and then gradually change back from the specified color.
+    private IEnumerator FlashColorCoroutine(Color flashColor, float changeToFlashColorDuration, float flashDuration, float changeToOriginalColorDuration)
+    {
+        // Ensures that the character isn't already flashing a color and that the given durations are valid.
+        if (IsColorFlashing)
+            throw new System.InvalidOperationException("The character is already flashing a color.");
+        if (changeToFlashColorDuration <= 0.0f)
+            throw new System.ArgumentOutOfRangeException("The specified duration for the character to gradually change to a color must be greater than zero.");
+        if (flashDuration <= 0.0f)
+            throw new System.ArgumentOutOfRangeException("The specified duration for the character to flash a color must be greater than zero.");
+        if (changeToOriginalColorDuration <= 0.0f)
+            throw new System.ArgumentOutOfRangeException("The specified duration for the character to gradually change back to it's original color must be greater than zero.");
+
+        // The sprite renderer of the child object which displays the character sprite.
+        SpriteRenderer spriteRenderer = GetComponentInChildren<SpriteRenderer>();
+
+        // A timer used to store the duration in seconds for which the character color has been changing from the original color to the flash color.
+        float colorChangeTimer = 0.0f;
+        // Loops until the color has been completely changed from the original to the flash color.
+        while (colorChangeTimer < changeToFlashColorDuration)
+        {
+            spriteRenderer.color = Color.Lerp(defaultSpriteRendererColor, flashColor, colorChangeTimer / changeToFlashColorDuration);
+
+            // Progresses through the loop if the character is currently unpaused.
+            if (!IsPaused)
+                colorChangeTimer += Time.deltaTime;
+
+            yield return null;
+        }
+
+        // A timer used to store how long the coroutine has been waiting since the character was changed to the flash color.
+        float waitTimer = 0.0f;
+        // A pause-friendly loop which causes the coroutine to wait until the specified duration has passed - throughout this period flashColorCoroutine will have a value, which means the IsColorFlashing property will return true.
+        while (waitTimer < flashDuration)
+        {
+            // Progresses through the loop if the character is currently unpaused.
+            if (!IsPaused)
+                waitTimer += Time.deltaTime;
+
+            yield return null;
+        }
+
+        colorChangeTimer = 0.0f;
+        // Loops until the color has been completely changed from the flash color to the original color.
+        while (colorChangeTimer < changeToOriginalColorDuration)
+        {
+            spriteRenderer.color = Color.Lerp(flashColor, defaultSpriteRendererColor, colorChangeTimer / changeToOriginalColorDuration);
+
+            // Progresses through the loop if the character is currently unpaused.
+            if (!IsPaused)
+                colorChangeTimer += Time.deltaTime;
+
+            yield return null;
+        }
+
+        // Calls the StopColorFlashing() method so that colorFlashCoroutine will be set to null when this coroutine finishes, meaning that it will always be null unless an overload of this coroutine is running.
+        StopColorFlashing();
+    }
+
 
     // Called when the script is loaded.
     private void Awake()

@@ -1,14 +1,30 @@
 ﻿//////////////////////////////////////////////////
 // Author/s:            Chris Murphy
 // Date created:        18/04/17
-// Date last edited:    25/04/17
+// Date last edited:    29/04/17
 //////////////////////////////////////////////////
 using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 
 // A script used to handle the actions of a player-controlled character derived from the abstract Character script.
 public class PlayerCharacterScript : CharacterScript
 {
+    // A list of non-combo attack objects which the player can use as prefabs to spawn attacks.
+    public List<Transform> MoveList;
+
+
+    // Called when the script is loaded.
+    protected override void AwakeSupplement()
+    {
+        // Ensures that each of the gameobjects in the move list are valid attack objects.
+        foreach (Transform attack in MoveList)
+        {
+            if(attack.GetComponent<AttackScript>() == null)
+                throw new System.Exception("Any gameobjects in the MoveList of the player character must have an AttackScript component attached.");
+        }
+    }
+
     // Called when the player character has been damaged.
     protected override void DamageSupplement()
     {
@@ -41,23 +57,25 @@ public class PlayerCharacterScript : CharacterScript
     // Updates the attacking status of the player character.
     protected override void UpdateAttacking()
     {
-        if (Input.GetButtonDown("LightAttack"))
+        if (!IsAttacking)
         {
-            if (!IsAttacking)
-                Attack();
+            if (Input.GetButtonDown("Attack"))  
+                Attack(MoveList[0]);
+            if (Input.GetButtonDown("Launcher"))
+                Attack(MoveList[1]);
         }
     }
 
 
-    // Spawns a self-destructing attack object which will damage enemies with which it collides.
-    private void Attack()
+    // Spawns a self-destructing attack object from the specified attack prefab.
+    private void Attack(Transform attackPrefab)
     {
         // Ensures that no attack objects already exist.
         if (IsAttacking)
             throw new System.InvalidOperationException("The player character already has an active attack object currently spawned.");
 
         // Spawns a new attack object and initialises it.
-        Transform attackObject = (Transform)Instantiate(AttackPrefab, this.transform.position, Quaternion.identity);
+        Transform attackObject = (Transform)Instantiate(attackPrefab, this.transform.position, Quaternion.identity);
         attackObject.GetComponent<AttackScript>().InitialiseUsingCharacter(this.transform, AttackScript.CharacterDamageGroup.Enemy, true);
     }
 }

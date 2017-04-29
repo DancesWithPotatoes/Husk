@@ -1,7 +1,7 @@
 ﻿//////////////////////////////////////////////////
 // Author/s:            Chris Murphy
 // Date created:        18/03/17
-// Date last edited:    25/04/17
+// Date last edited:    29/04/17
 //////////////////////////////////////////////////
 using UnityEngine;
 using System.Collections;
@@ -9,6 +9,8 @@ using System.Collections;
 // A script used to handle the actions of an enemy character derived from the abstract Character script.
 public class EnemyCharacterScript : CharacterScript
 {
+    // The prefab used which allows the enemy character to spawn an attack object to damage enemy characters.
+    public Transform AttackPrefab;
     // The distance from the player character at which the enemy character will stop chasing and try to attack it.
     public float AttackProximity;
     // The time in seconds between each attack performed by the enemy.
