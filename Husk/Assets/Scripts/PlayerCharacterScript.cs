@@ -12,10 +12,12 @@ public class PlayerCharacterScript : CharacterScript
 {
     // A list of non-combo attack objects which the player can use as prefabs to spawn attacks.
     public List<Transform> MoveList;
+    // TEST - an ability for the player to test implementing.
+    public Transform TestAbility;
 
 
     // Called when the script is loaded.
-    protected override void AwakeSupplement()
+    protected override void AwakeAddendum()
     {
         // Ensures that each of the gameobjects in the move list are valid attack objects.
         foreach (Transform attack in MoveList)
@@ -26,7 +28,7 @@ public class PlayerCharacterScript : CharacterScript
     }
 
     // Called when the player character has been damaged.
-    protected override void DamageSupplement()
+    protected override void DamageAddendum()
     {
         // The script used to control the main camera.
         MainCameraScript cameraScript = Camera.main.GetComponent<MainCameraScript>();
@@ -63,6 +65,12 @@ public class PlayerCharacterScript : CharacterScript
                 Attack(MoveList[0]);
             if (Input.GetButtonDown("Launcher"))
                 Attack(MoveList[1]);
+        }
+
+        if (Input.GetKeyDown(KeyCode.Space))
+        {
+            Transform testAbility = Instantiate(TestAbility).transform;
+            testAbility.GetComponent<AbilityScript>().InitialiseUsingCharacter(this.transform);
         }
     }
 

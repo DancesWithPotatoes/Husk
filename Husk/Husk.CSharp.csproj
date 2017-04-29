@@ -63,9 +63,11 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Assets\Scripts\AbilityScript.cs" />
     <Compile Include="Assets\Scripts\AttackScript.cs" />
     <Compile Include="Assets\Scripts\CharacterDirectionIndicatorScript.cs" />
     <Compile Include="Assets\Scripts\CharacterScript.cs" />
+    <Compile Include="Assets\Scripts\DodgeAbilityScript.cs" />
     <Compile Include="Assets\Scripts\EnemyCharacterScript.cs" />
     <Compile Include="Assets\Scripts\MainCameraScript.cs" />
     <Compile Include="Assets\Scripts\PlayerCharacterScript.cs" />

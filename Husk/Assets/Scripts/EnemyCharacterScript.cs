@@ -18,13 +18,13 @@ public class EnemyCharacterScript : CharacterScript
 
 
     // Called when the enemy character has been damaged.
-    protected override void DamageSupplement()
+    protected override void DamageAddendum()
     {
         ResetAttackStatus();
     }
 
     // Called when the script is loaded.
-    protected override void AwakeSupplement()
+    protected override void AwakeAddendum()
     {
         // Stores the player character for future referencing.
         playerCharacter = GameObject.FindWithTag("Player").transform;

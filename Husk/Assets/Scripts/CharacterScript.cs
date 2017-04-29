@@ -52,10 +52,10 @@ public abstract class CharacterScript : MonoBehaviour
             StopColorFlashing();
         FlashColor(Color.red, 0.2f);
 
-        DamageSupplement();
+        DamageAddendum();
     }
 
-    // Freezes the character in place for the specified duration.
+    // Stops the character from being able to change it's own position for the specified duration.
     public void Freeze(float duration)
     {
         freezeCoroutine = StartCoroutine(FreezeCoroutine(duration));
@@ -122,10 +122,10 @@ public abstract class CharacterScript : MonoBehaviour
     protected Vector2 heading;
 
     // An empty virtual method which can be used by derived classes to add extra functionality to the Damage() method.
-    protected virtual void DamageSupplement() { }
+    protected virtual void DamageAddendum() { }
 
     // An empty virtual method which can be used by derived classes to add extra functionality to the Awake() method.
-    protected virtual void AwakeSupplement() { }
+    protected virtual void AwakeAddendum() { }
 
     // An abstract method which will be used to implement the movement of the character in derived scripts.
     protected abstract void UpdateMovement();
@@ -305,7 +305,7 @@ public abstract class CharacterScript : MonoBehaviour
         // Stores the initial color of the character sprite.
         defaultSpriteRendererColor = GetComponentInChildren<SpriteRenderer>().color;
 
-        AwakeSupplement();
+        AwakeAddendum();
     }
 
     // Called when the script is initialised.
