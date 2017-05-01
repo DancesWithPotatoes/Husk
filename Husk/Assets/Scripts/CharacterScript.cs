@@ -1,7 +1,7 @@
 ﻿//////////////////////////////////////////////////
 // Author/s:            Chris Murphy
 // Date created:        16/04/17
-// Date last edited:    29/04/17
+// Date last edited:    01/05/17
 //////////////////////////////////////////////////
 using UnityEngine;
 using System.Collections;
@@ -10,8 +10,7 @@ using System.Collections;
 [RequireComponent(typeof(Rigidbody2D))]
 // An abstract script which when derived will be used to handle the actions of a character within the world that can attack, move, and be damaged by other character-derived objects.
 public abstract class CharacterScript : MonoBehaviour
-{
-    
+{    
     // Whether or not the character is currently locked into an unchanging state.
     [HideInInspector]
     public bool IsPaused;
@@ -23,13 +22,7 @@ public abstract class CharacterScript : MonoBehaviour
     {
         get { return heading; }
     }
-
-    // The property used to get whether the character currently has a child attack object spawned.
-    public bool IsAttacking
-    {
-        get { return (this.transform.GetComponentInChildren<AttackScript>() != null); }
-    }
-
+    
     // The property used to get whether the child is currently frozen.
     public bool IsFrozen
     {
