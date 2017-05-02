@@ -40,6 +40,8 @@ public abstract class AbilityScript : MonoBehaviour
 
     // The parent character which the ability object effects.
     protected Transform parentCharacter;
+    // The amount of time in seconds for which the ability object has existed.
+    protected float existTime = 0.0f;
 
     // An empty virtual method which can be used by derived classes to add extra functionality to the InitialisedUsingCharacter() method.
     protected virtual void InitialiseUsingCharacterAddendum() { }
@@ -49,14 +51,15 @@ public abstract class AbilityScript : MonoBehaviour
 
     // An empty virtual method which can be used by derived classes to add extra functionality to the Update() method.
     protected virtual void UpdateAddendum() { }
-
-
-    // The amount of time in seconds for which the ability object has existed.
-    private float existTime = 0.0f;
+    
 
     // Called when the script is loaded.
     private void Awake() 
     {
+        // Ensures that the lifetime duration of the ability object is greater than zero.
+        if (Duration <= 0.0f)
+            throw new System.Exception("The Duration value of the ability object must be greater than zero.");
+
         AwakeAddendum();
     }
 

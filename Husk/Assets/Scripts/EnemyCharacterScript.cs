@@ -1,7 +1,7 @@
 ﻿//////////////////////////////////////////////////
 // Author/s:            Chris Murphy
 // Date created:        18/03/17
-// Date last edited:    01/05/17
+// Date last edited:    02/05/17
 //////////////////////////////////////////////////
 using UnityEngine;
 using System.Collections;
@@ -10,7 +10,7 @@ using System.Collections;
 public class EnemyCharacterScript : CharacterScript
 {
     // The prefab which allows the enemy character to spawn an attack ability object and thus perform attacks.
-    public Transform AttackAbility;
+    public Transform AttackAbilityPrefab;
     // The distance from the player character at which the enemy character will stop chasing and try to attack it.
     public float AttackProximity;
     // The time in seconds between each attack performed by the enemy.
@@ -19,7 +19,7 @@ public class EnemyCharacterScript : CharacterScript
 
     // Called when the enemy character has been damaged.
     protected override void DamageAddendum()
-    {
+    {        
         ResetAttackStatus();
     }
 
@@ -54,11 +54,14 @@ public class EnemyCharacterScript : CharacterScript
     // Updates the attacking status of the enemy character.
     protected override void UpdateAttacking()
     {
-        attackTimer += Time.deltaTime;
-        if (attackTimer >= AttackRate)
+        if (AttackRate > 0.0f)
         {
-            Attack();
-            ResetAttackStatus();
+            attackTimer += Time.deltaTime;
+            if (attackTimer >= AttackRate)
+            {
+                Attack();
+                ResetAttackStatus();
+            }
         }
     }
 
@@ -76,18 +79,21 @@ public class EnemyCharacterScript : CharacterScript
             throw new System.InvalidOperationException("The enemy character already has an active ability object currently spawned.");
 
         // Spawns and initialises new attack ability object.
-        Transform attackAbility = Instantiate(AttackAbility).transform;
+        Transform attackAbility = Instantiate(AttackAbilityPrefab).transform;
         attackAbility.GetComponent<AbilityScript>().InitialiseUsingCharacter(this.transform);
     }
 
     // Resets the attacking status of the enemy character.
     private void ResetAttackStatus()
     {
-        attackTimer = 0.0f;
+        if (AttackRate > 0.0f)
+        {
+            attackTimer = 0.0f;
 
-        //// Causes the character to gradually change from it's default color to white until it attacks.
-        //if (IsColorFlashing)
-        //    StopColorFlashing();
-        //FlashColor(Color.white, AttackRate, AttackPrefab.GetComponent<AttackScript>().ExistDuration);
+            // TEMP - causes the character to gradually change from it's default color to white until it attacks.
+            if (IsColorFlashing)
+                StopColorFlashing();
+            FlashColor(Color.white, AttackRate, AttackAbilityPrefab.GetComponent<AbilityScript>().Duration);
+        }
     }
 }

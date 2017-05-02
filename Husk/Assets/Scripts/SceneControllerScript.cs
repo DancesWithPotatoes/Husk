@@ -1,7 +1,7 @@
 ﻿//////////////////////////////////////////////////
 // Author/s:            Chris Murphy
 // Date created:        25/04/17
-// Date last edited:    25/04/17
+// Date last edited:    02/05/17
 //////////////////////////////////////////////////
 using UnityEngine;
 using System.Collections;
@@ -88,6 +88,6 @@ public class SceneControllerScript : MonoBehaviour
             enemy.GetComponent<EnemyCharacterScript>().IsPaused = pausedState;
 
         foreach (GameObject attack in GameObject.FindGameObjectsWithTag("Attack"))
-            attack.GetComponent<AttackScript>().IsPaused = pausedState;
+            attack.GetComponent<AttackAbilityScript>().IsPaused = pausedState;
     }
 }

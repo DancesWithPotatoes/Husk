@@ -1,7 +1,7 @@
 ﻿//////////////////////////////////////////////////
 // Author/s:            Chris Murphy
 // Date created:        18/04/17
-// Date last edited:    01/05/17
+// Date last edited:    02/05/17
 //////////////////////////////////////////////////
 using UnityEngine;
 using System.Collections;
@@ -12,8 +12,14 @@ public class PlayerCharacterScript : CharacterScript
 {
     //// A list of non-combo attack objects which the player can use as prefabs to spawn attacks.
     //public List<Transform> MoveList;
-    // TEST - an ability for the player to test implementing.
-    public Transform TestAbility;
+    // A prefab ability object which allows the player to attack.
+    public Transform AttackAbilityPrefab;
+
+    // The property used to get whether the player currently has an attack ability object spawned.
+    public bool IsAttacking
+    {
+        get { return (GetComponentInChildren<AttackAbilityScript>() != null); }
+    }
 
 
     // Called when the script is loaded.
@@ -59,31 +65,11 @@ public class PlayerCharacterScript : CharacterScript
     // Updates the attacking status of the player character.
     protected override void UpdateAttacking()
     {
-        //if (!IsAttacking)
-        //{
-        //    if (Input.GetButtonDown("Attack"))  
-        //        Attack(MoveList[0]);
-        //    if (Input.GetButtonDown("Launcher"))
-        //        Attack(MoveList[1]);
-        //}
-
-        if (Input.GetKeyDown(KeyCode.Space))
+        // If the player performs the basic attack input, spawns a basic attack ability object.
+        if (!IsAttacking && Input.GetButtonDown("Attack"))
         {
-            Transform testAbility = Instantiate(TestAbility).transform;
-            testAbility.GetComponent<AbilityScript>().InitialiseUsingCharacter(this.transform);
+            Transform attackAbility = Instantiate(AttackAbilityPrefab).transform;
+            attackAbility.GetComponent<AbilityScript>().InitialiseUsingCharacter(this.transform);
         }
     }
-
-
-    //// Spawns a self-destructing attack object from the specified attack prefab.
-    //private void Attack(Transform attackPrefab)
-    //{
-    //    // Ensures that no attack objects already exist.
-    //    if (IsAttacking)
-    //        throw new System.InvalidOperationException("The player character already has an active attack object currently spawned.");
-
-    //    // Spawns a new attack object and initialises it.
-    //    Transform attackObject = (Transform)Instantiate(attackPrefab, this.transform.position, Quaternion.identity);
-    //    attackObject.GetComponent<AttackScript>().InitialiseUsingCharacter(this.transform, AttackScript.CharacterDamageGroup.Enemy, true);
-    //}
 }
