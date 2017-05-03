@@ -1,7 +1,7 @@
 ﻿//////////////////////////////////////////////////
 // Author/s:            Chris Murphy
 // Date created:        16/04/17
-// Date last edited:    01/05/17
+// Date last edited:    03/05/17
 //////////////////////////////////////////////////
 using UnityEngine;
 using System.Collections;
@@ -164,8 +164,8 @@ public abstract class CharacterScript : MonoBehaviour
         // Ensures that the character isn't already flashing a color and that the given flash duration is valid.
         if (IsColorFlashing)
             throw new System.InvalidOperationException("The character is already flashing a color.");
-        if (duration <= 0.0f)
-            throw new System.ArgumentOutOfRangeException("The specified duration for the character to flash a color must be greater than zero.");
+        if (duration < 0.0f)
+            throw new System.ArgumentOutOfRangeException("The specified duration for the character to flash a color must be greater than or equal to zero.");
 
         // The sprite renderer of the child object which displays the character sprite.
         SpriteRenderer spriteRenderer = GetComponentInChildren<SpriteRenderer>();
@@ -192,10 +192,10 @@ public abstract class CharacterScript : MonoBehaviour
         // Ensures that the character isn't already flashing a color and that the given durations are valid.
         if (IsColorFlashing)
             throw new System.InvalidOperationException("The character is already flashing a color.");
-        if (colorChangeDuration <= 0.0f)
-            throw new System.ArgumentOutOfRangeException("The specified duration for the character to gradually change to a color must be greater than zero.");
-        if (flashDuration <= 0.0f)
-            throw new System.ArgumentOutOfRangeException("The specified duration for the character to flash a color must be greater than zero.");
+        if (colorChangeDuration < 0.0f)
+            throw new System.ArgumentOutOfRangeException("The specified duration for the character to gradually change to a color must be greater than or equal to zero.");
+        if (flashDuration < 0.0f)
+            throw new System.ArgumentOutOfRangeException("The specified duration for the character to flash a color must be greater than or equal to zero.");
 
         // The sprite renderer of the child object which displays the character sprite.
         SpriteRenderer spriteRenderer = GetComponentInChildren<SpriteRenderer>();
@@ -235,12 +235,12 @@ public abstract class CharacterScript : MonoBehaviour
         // Ensures that the character isn't already flashing a color and that the given durations are valid.
         if (IsColorFlashing)
             throw new System.InvalidOperationException("The character is already flashing a color.");
-        if (changeToFlashColorDuration <= 0.0f)
-            throw new System.ArgumentOutOfRangeException("The specified duration for the character to gradually change to a color must be greater than zero.");
-        if (flashDuration <= 0.0f)
-            throw new System.ArgumentOutOfRangeException("The specified duration for the character to flash a color must be greater than zero.");
-        if (changeToOriginalColorDuration <= 0.0f)
-            throw new System.ArgumentOutOfRangeException("The specified duration for the character to gradually change back to it's original color must be greater than zero.");
+        if (changeToFlashColorDuration < 0.0f)
+            throw new System.ArgumentOutOfRangeException("The specified duration for the character to gradually change to a color must be greater than or equal to zero.");
+        if (flashDuration < 0.0f)
+            throw new System.ArgumentOutOfRangeException("The specified duration for the character to flash a color must be greater than than or equal to zero.");
+        if (changeToOriginalColorDuration < 0.0f)
+            throw new System.ArgumentOutOfRangeException("The specified duration for the character to gradually change back to it's original color must be greater than than or equal to zero.");
 
         // The sprite renderer of the child object which displays the character sprite.
         SpriteRenderer spriteRenderer = GetComponentInChildren<SpriteRenderer>();
@@ -258,7 +258,9 @@ public abstract class CharacterScript : MonoBehaviour
 
             yield return null;
         }
-
+        // Ensures that the character color is set to the flash color if the changeToFlashColorDuration is zero.
+        spriteRenderer.color = flashColor;
+        
         // A timer used to store how long the coroutine has been waiting since the character was changed to the flash color.
         float waitTimer = 0.0f;
         // A pause-friendly loop which causes the coroutine to wait until the specified duration has passed - throughout this period flashColorCoroutine will have a value, which means the IsColorFlashing property will return true.
@@ -283,6 +285,8 @@ public abstract class CharacterScript : MonoBehaviour
 
             yield return null;
         }
+        // Ensures that the character is set to it's original color if the changeToOriginalColorDuration is zero.
+        spriteRenderer.color = defaultSpriteRendererColor;
 
         // Calls the StopColorFlashing() method so that colorFlashCoroutine will be set to null when this coroutine finishes, meaning that it will always be null unless an overload of this coroutine is running.
         StopColorFlashing();
