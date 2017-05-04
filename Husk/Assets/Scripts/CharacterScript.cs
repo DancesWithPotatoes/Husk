@@ -1,7 +1,7 @@
 ﻿//////////////////////////////////////////////////
 // Author/s:            Chris Murphy
 // Date created:        16/04/17
-// Date last edited:    03/05/17
+// Date last edited:    04/05/17
 //////////////////////////////////////////////////
 using UnityEngine;
 using System.Collections;
@@ -10,7 +10,7 @@ using System.Collections;
 [RequireComponent(typeof(Rigidbody2D))]
 // An abstract script which when derived will be used to handle the actions of a character within the world that can attack, move, and be damaged by other character-derived objects.
 public abstract class CharacterScript : MonoBehaviour
-{    
+{
     // Whether or not the character is currently locked into an unchanging state.
     [HideInInspector]
     public bool IsPaused;
@@ -22,12 +22,12 @@ public abstract class CharacterScript : MonoBehaviour
     {
         get { return heading; }
     }
-    
-    // The property used to get whether the child is currently frozen.
+
+    // The property used to get whether the character is currently unable to move itself.
     public bool IsFrozen
     {
-        // freezeCoroutine will have a value if FreezeCoroutine() is running, else it will always be equal to null.
-        get { return (freezeCoroutine != null); }
+        // freezeCoroutine will have a value if FreezeCoroutine() is running, else it will always be equal to null - the character will also be considered frozen if under the influence of 'knockback'.
+        get { return (freezeCoroutine != null || knockBackForce != Vector2.zero); }
     }
 
     // The property used to get whether the character is currently flashing a color.
@@ -44,11 +44,17 @@ public abstract class CharacterScript : MonoBehaviour
         if (IsColorFlashing)
             StopColorFlashing();
         FlashColor(Color.red, 0.2f);
-
+        
         DamageAddendum();
     }
 
-    // Stops the character from being able to change it's own position for the specified duration.
+    // Applies the specified knockback force to the player, causing it to be unable to act until it stops moving.
+    public void ApplyKnockbackForce(Vector2 force)
+    {
+        knockBackForce = force;
+    }
+
+    // Stops the character from being able to move itself for the specified duration.
     public void Freeze(float duration)
     {
         freezeCoroutine = StartCoroutine(FreezeCoroutine(duration));
@@ -131,6 +137,8 @@ public abstract class CharacterScript : MonoBehaviour
     private Coroutine freezeCoroutine;
     // The coroutine which is currently causing the character to color flash.
     private Coroutine colorFlashCoroutine;
+    // The force (applied through gameplay code, not Unity's physics engine) being applied to the character under the influence of 'knockback'.
+    private Vector2 knockBackForce;
 
     // A coroutine which freezes the character in place for the specified duration, then unfreezes it.
     private IEnumerator FreezeCoroutine(float duration)
@@ -260,7 +268,7 @@ public abstract class CharacterScript : MonoBehaviour
         }
         // Ensures that the character color is set to the flash color if the changeToFlashColorDuration is zero.
         spriteRenderer.color = flashColor;
-        
+
         // A timer used to store how long the coroutine has been waiting since the character was changed to the flash color.
         float waitTimer = 0.0f;
         // A pause-friendly loop which causes the coroutine to wait until the specified duration has passed - throughout this period flashColorCoroutine will have a value, which means the IsColorFlashing property will return true.
@@ -312,15 +320,26 @@ public abstract class CharacterScript : MonoBehaviour
         heading = Vector2.down;
         freezeCoroutine = null;
         colorFlashCoroutine = null;
+        knockBackForce = Vector2.zero;
     }
 
     // Called each frame and used to update gameplay logic.
     private void Update()
     {
-        if (!IsPaused)
+        if (!IsPaused && !IsFrozen)
         {
             UpdateMovement();
             UpdateAttacking();
+        }
+
+        if (knockBackForce != Vector2.zero)
+        {
+            this.transform.Translate(knockBackForce * Time.deltaTime);
+
+            knockBackForce = Vector2.ClampMagnitude(knockBackForce, knockBackForce.magnitude - (3.0f * Time.deltaTime));
+
+            if (knockBackForce.magnitude < 0.1f)
+                knockBackForce = Vector2.zero;
         }
     }
 }

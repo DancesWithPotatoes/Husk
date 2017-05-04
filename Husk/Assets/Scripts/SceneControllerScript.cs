@@ -1,7 +1,7 @@
 ﻿//////////////////////////////////////////////////
 // Author/s:            Chris Murphy
 // Date created:        25/04/17
-// Date last edited:    02/05/17
+// Date last edited:    04/05/17
 //////////////////////////////////////////////////
 using UnityEngine;
 using System.Collections;
@@ -26,8 +26,10 @@ public class SceneControllerScript : MonoBehaviour
 
         // Sets the pause timer to -1.0f so that the scene will remain paused indefinitely until unpaused.
         pauseTimer = -1.0f;
+
+        Debug.Log("Paused");
     }
-    // Pauses the scene for the specified duration.
+    // Pauses the scene for a specific duration.
     public void PauseScene(float duration)
     {
         // Ensures that the scene isn't already paused and that the specified duration is valid.
@@ -39,6 +41,8 @@ public class SceneControllerScript : MonoBehaviour
         ChangeAllGameObjectsPausedState(true);
 
         pauseTimer = duration;
+
+        Debug.Log("Paused");
     }
 
     // Unpauses the scene.
@@ -51,6 +55,8 @@ public class SceneControllerScript : MonoBehaviour
         ChangeAllGameObjectsPausedState(false);
 
         pauseTimer = 0.0f;
+
+        Debug.Log("Unpaused");
     }
 
 
@@ -66,6 +72,15 @@ public class SceneControllerScript : MonoBehaviour
     // Called each frame and used to update gameplay logic.
     private void Update()
     {
+        // Pauses the scene if Esc is pressed.
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            if (IsPaused)
+                UnpauseScene();
+            else
+                PauseScene();
+        }
+
         // If the pause timer is greater than zero, decrements it towards the point where it reaches zero and unpauses the scene.
         if (pauseTimer > 0.0f)
         {

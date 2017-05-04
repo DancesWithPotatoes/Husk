@@ -1,7 +1,7 @@
 ﻿//////////////////////////////////////////////////
 // Author/s:            Chris Murphy
 // Date created:        18/03/17
-// Date last edited:    02/05/17
+// Date last edited:    04/05/17
 //////////////////////////////////////////////////
 using UnityEngine;
 using System.Collections;
@@ -19,7 +19,7 @@ public class EnemyCharacterScript : CharacterScript
 
     // Called when the enemy character has been damaged.
     protected override void DamageAddendum()
-    {        
+    {
         ResetAttackStatus();
     }
 
@@ -35,20 +35,17 @@ public class EnemyCharacterScript : CharacterScript
     // Updates the movement of the enemy character.
     protected override void UpdateMovement()
     {
-        if (!IsFrozen)
-        {
-            // A vector from the enemy character to the player character.
-            Vector2 toPlayer = playerCharacter.position - this.transform.position;            
-            if (toPlayer != Vector2.zero)
-            {
-                // If the player isn't within the attack proximity, moves the enemy towards it.
-                if (toPlayer.magnitude > AttackProximity)
-                    this.transform.Translate(toPlayer.normalized * MoveSpeed * Time.deltaTime);
+        //// A vector from the enemy character to the player character.
+        //Vector2 toPlayer = playerCharacter.position - this.transform.position;
+        //if (toPlayer != Vector2.zero)
+        //{
+        //    // If the player isn't within the attack proximity, moves the enemy towards it.
+        //    if (toPlayer.magnitude > AttackProximity)
+        //        this.transform.Translate(toPlayer.normalized * MoveSpeed * Time.deltaTime);
 
-                // Updates the heading vector.
-                heading = toPlayer.normalized;
-            }
-        }
+        //    // Updates the heading vector.
+        //    heading = toPlayer.normalized;
+        //}
     }
 
     // Updates the attacking status of the enemy character.

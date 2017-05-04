@@ -1,7 +1,7 @@
 ﻿//////////////////////////////////////////////////
 // Author/s:            Chris Murphy
 // Date created:        01/05/17
-// Date last edited:    03/05/17
+// Date last edited:    04/05/17
 //////////////////////////////////////////////////
 using UnityEngine;
 using System.Collections;
@@ -86,8 +86,6 @@ public class AttackAbilityScript : AbilityScript
         if (parentCharacterScript.IsColorFlashing)
             parentCharacterScript.StopColorFlashing();
         parentCharacterScript.FlashColor(Color.white, WindUpDuration, Duration - (WindUpDuration + CooldownDuration), CooldownDuration);
-
-        Debug.Log(ActiveDuration);
     }
 
     // Called each frame and used to update gameplay logic.
@@ -105,23 +103,19 @@ public class AttackAbilityScript : AbilityScript
             if (parentCharacterScript.IsFrozen)
                 parentCharacterScript.Unfreeze();
             parentCharacterScript.Freeze(ActiveDuration);
-                        
+
             // The script used to handle the main camera.
             MainCameraScript cameraScript = Camera.main.GetComponent<MainCameraScript>();
             // Shakes the camera while the attack is active.
             if (cameraScript.IsShaking)
                 cameraScript.StopShaking();
             cameraScript.Shake(ActiveDuration, ScreenShakeMagnitude);
-
-            Debug.Log(attackStage);
         }
         // Else if the active duration of the attack object hitbox has been completed, disables the hitbox.
         else if (attackStage == AttackStage.Active && CooldownDuration > 0.0f && existTime > (WindUpDuration + ActiveDuration))
         {
             attackStage = AttackStage.Cooldown;
             IsHitboxEnabled = false;
-
-            Debug.Log(attackStage);
         }
     }
 
@@ -150,7 +144,12 @@ public class AttackAbilityScript : AbilityScript
             // Ensures that the attack object will only damage the correct group of characters.
             if (damageGroup == CharacterDamageGroup.Player && otherCollider.GetComponent<PlayerCharacterScript>() != null ||
                 damageGroup == CharacterDamageGroup.Enemy && otherCollider.GetComponent<EnemyCharacterScript>() != null)
-                otherCollider.GetComponent<CharacterScript>().Damage();
+            {
+                // The script used to control the attacked character.
+                CharacterScript otherCharacterScript = otherCollider.GetComponent<CharacterScript>();
+                otherCharacterScript.Damage();
+                otherCharacterScript.ApplyKnockbackForce(parentCharacter.GetComponent<CharacterScript>().Heading * 3.0f);
+            }
         }
     }
 }
