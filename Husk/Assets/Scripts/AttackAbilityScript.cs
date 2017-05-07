@@ -1,7 +1,7 @@
 ﻿//////////////////////////////////////////////////
 // Author/s:            Chris Murphy
 // Date created:        01/05/17
-// Date last edited:    04/05/17
+// Date last edited:    07/05/17
 //////////////////////////////////////////////////
 using UnityEngine;
 using System.Collections;
@@ -29,6 +29,8 @@ public class AttackAbilityScript : AbilityScript
     public float WindUpDuration;
     // The amount of time for which the attack ability object persists after the attack hitbox has been deactivated.
     public float CooldownDuration;
+    // The value used to scale the force of the knockback applied to any character hit by the attack object.
+    public float KnockbackForce;
     // The magnitude of the camera shake which occurs when the attack is active.
     public float ScreenShakeMagnitude;
 
@@ -148,7 +150,8 @@ public class AttackAbilityScript : AbilityScript
                 // The script used to control the attacked character.
                 CharacterScript otherCharacterScript = otherCollider.GetComponent<CharacterScript>();
                 otherCharacterScript.Damage();
-                otherCharacterScript.ApplyKnockbackForce(parentCharacter.GetComponent<CharacterScript>().Heading * 3.0f);
+                // Applies knockback force in the direction of the attack.
+                otherCharacterScript.ApplyKnockbackForce(parentCharacter.GetComponent<CharacterScript>().Heading * KnockbackForce);
             }
         }
     }

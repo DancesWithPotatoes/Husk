@@ -1,7 +1,7 @@
 ﻿//////////////////////////////////////////////////
 // Author/s:            Chris Murphy
 // Date created:        25/04/17
-// Date last edited:    04/05/17
+// Date last edited:    07/05/17
 //////////////////////////////////////////////////
 using UnityEngine;
 using System.Collections;
@@ -102,7 +102,10 @@ public class SceneControllerScript : MonoBehaviour
         foreach (GameObject enemy in GameObject.FindGameObjectsWithTag("Enemy"))
             enemy.GetComponent<EnemyCharacterScript>().IsPaused = pausedState;
 
-        foreach (GameObject attack in GameObject.FindGameObjectsWithTag("Attack"))
-            attack.GetComponent<AttackAbilityScript>().IsPaused = pausedState;
+        foreach (GameObject ability in GameObject.FindGameObjectsWithTag("Character Ability"))
+            ability.GetComponent<AbilityScript>().IsPaused = pausedState;
+
+        foreach (GameObject motionIndicator in GameObject.FindGameObjectsWithTag("Motion Indicator"))
+            motionIndicator.GetComponent<MotionIndicatorScript>().IsPaused = pausedState;
     }
 }

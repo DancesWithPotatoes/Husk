@@ -1,7 +1,7 @@
 ﻿//////////////////////////////////////////////////
 // Author/s:            Chris Murphy
 // Date created:        16/04/17
-// Date last edited:    04/05/17
+// Date last edited:    07/05/17
 //////////////////////////////////////////////////
 using UnityEngine;
 using System.Collections;
@@ -16,6 +16,8 @@ public abstract class CharacterScript : MonoBehaviour
     public bool IsPaused;
     // The maximum movement speed of the character.
     public float MoveSpeed;
+    // The weight of the character, used to determine how quickly the knockback effect fades.
+    public float Weight;
 
     // The property used to get the current heading of the character.
     public Vector2 Heading
@@ -44,11 +46,11 @@ public abstract class CharacterScript : MonoBehaviour
         if (IsColorFlashing)
             StopColorFlashing();
         FlashColor(Color.red, 0.2f);
-        
+
         DamageAddendum();
     }
 
-    // Applies the specified knockback force to the player, causing it to be unable to act until it stops moving.
+    // Applies the specified force to the character to simulate 'knockback' from an attack.
     public void ApplyKnockbackForce(Vector2 force)
     {
         knockBackForce = force;
@@ -137,7 +139,7 @@ public abstract class CharacterScript : MonoBehaviour
     private Coroutine freezeCoroutine;
     // The coroutine which is currently causing the character to color flash.
     private Coroutine colorFlashCoroutine;
-    // The force (applied through gameplay code, not Unity's physics engine) being applied to the character under the influence of 'knockback'.
+    // The force (applied through gameplay code, not Unity's physics engine) currently being applied to the character to simulate 'knockback' from an attack.
     private Vector2 knockBackForce;
 
     // A coroutine which freezes the character in place for the specified duration, then unfreezes it.
@@ -326,20 +328,24 @@ public abstract class CharacterScript : MonoBehaviour
     // Called each frame and used to update gameplay logic.
     private void Update()
     {
-        if (!IsPaused && !IsFrozen)
+        if (!IsPaused)
         {
-            UpdateMovement();
-            UpdateAttacking();
-        }
+            // If the character isn't frozen or being effected by knockback, updates it's movement and attacking status.
+            if (!IsFrozen)
+            {
+                UpdateMovement();
+                UpdateAttacking();
+            }
+            // Else if the character is currently being effected by knockback, continues moving it to simulate being forced backwards and decrements the knockback force to account for friction.
+            else if (knockBackForce != Vector2.zero)
+            {
+                this.transform.Translate(knockBackForce * Time.deltaTime);
 
-        if (knockBackForce != Vector2.zero)
-        {
-            this.transform.Translate(knockBackForce * Time.deltaTime);
-
-            knockBackForce = Vector2.ClampMagnitude(knockBackForce, knockBackForce.magnitude - (3.0f * Time.deltaTime));
-
-            if (knockBackForce.magnitude < 0.1f)
-                knockBackForce = Vector2.zero;
+                // Reduces the magnitude of the knockback force by the weight value of the character every second.
+                knockBackForce = Vector2.ClampMagnitude(knockBackForce, knockBackForce.magnitude - (Weight * Time.deltaTime));
+                if (knockBackForce.magnitude < 0.1f)
+                    knockBackForce = Vector2.zero;
+            }
         }
     }
 }
