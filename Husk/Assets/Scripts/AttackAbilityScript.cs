@@ -1,7 +1,7 @@
 ﻿//////////////////////////////////////////////////
 // Author/s:            Chris Murphy
 // Date created:        01/05/17
-// Date last edited:    07/05/17
+// Date last edited:    08/05/17
 //////////////////////////////////////////////////
 using UnityEngine;
 using System.Collections;
@@ -31,6 +31,8 @@ public class AttackAbilityScript : AbilityScript
     public float CooldownDuration;
     // The value used to scale the force of the knockback applied to any character hit by the attack object.
     public float KnockbackForce;
+    // The amount of time in seconds for which a character hit by the attack object will be frozen and unable to act after the knockback effect has been endured.
+    public float StaggerDuration;
     // The magnitude of the camera shake which occurs when the attack is active.
     public float ScreenShakeMagnitude;
 
@@ -149,9 +151,11 @@ public class AttackAbilityScript : AbilityScript
             {
                 // The script used to control the attacked character.
                 CharacterScript otherCharacterScript = otherCollider.GetComponent<CharacterScript>();
-                otherCharacterScript.Damage();
-                // Applies knockback force in the direction of the attack.
-                otherCharacterScript.ApplyKnockbackForce(parentCharacter.GetComponent<CharacterScript>().Heading * KnockbackForce);
+                otherCharacterScript.Damage(parentCharacter.GetComponent<CharacterScript>().Heading * KnockbackForce, 0.0f);
+                //// Applies knockback force in the direction of the attack.
+                //otherCharacterScript.ApplyKnockbackForce(parentCharacter.GetComponent<CharacterScript>().Heading * KnockbackForce);
+                //// Sets the character to be staggered for the specified duration after the knockback effect has cleared up.
+                //otherCharacterScript.Freeze(StaggerDuration);
             }
         }
     }

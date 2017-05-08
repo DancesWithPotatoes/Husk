@@ -1,7 +1,7 @@
 ﻿//////////////////////////////////////////////////
 // Author/s:            Chris Murphy
 // Date created:        16/04/17
-// Date last edited:    07/05/17
+// Date last edited:    08/05/17
 //////////////////////////////////////////////////
 using UnityEngine;
 using System.Collections;
@@ -39,9 +39,11 @@ public abstract class CharacterScript : MonoBehaviour
         get { return (colorFlashCoroutine != null); }
     }
 
-    // Damages the character.
-    public void Damage()
+    // Applies various damage effects to the character.
+    public void Damage(Vector2 attackKnockbackForce, float attackStaggerDuration)
     {
+        this.knockBackForce = attackKnockbackForce;
+
         // Causes the character to flash red.
         if (IsColorFlashing)
             StopColorFlashing();
@@ -50,11 +52,7 @@ public abstract class CharacterScript : MonoBehaviour
         DamageAddendum();
     }
 
-    // Applies the specified force to the character to simulate 'knockback' from an attack.
-    public void ApplyKnockbackForce(Vector2 force)
-    {
-        knockBackForce = force;
-    }
+    
 
     // Stops the character from being able to move itself for the specified duration.
     public void Freeze(float duration)
@@ -147,8 +145,8 @@ public abstract class CharacterScript : MonoBehaviour
     {
         if (IsPaused)
             throw new System.InvalidOperationException("The character can't be frozen when paused.");
-        if (IsFrozen)
-            throw new System.InvalidOperationException("The character is already frozen.");
+        if (IsFrozen && knockBackForce == Vector2.zero)
+            throw new System.InvalidOperationException("The character has already been manually frozen in a manner that isn't a result of knockback.");
         if (duration <= 0.0f)
             throw new System.ArgumentOutOfRangeException("The specified duration to freeze the character must be greater than zero.");
 
@@ -157,8 +155,8 @@ public abstract class CharacterScript : MonoBehaviour
         // A pause-friendly loop which causes the coroutine to wait until the specified duration has passed - throughout this period freezeCoroutine will have a value, which means the IsFrozen property will return true.
         while (waitTimer < duration)
         {
-            // Progresses through the loop if the character is currently unpaused.
-            if (!IsPaused)
+            // Progresses through the loop if the character is currently unpaused and not frozen specifically as a result of knockback.
+            if (!IsPaused && knockBackForce == Vector2.zero)
                 waitTimer += Time.deltaTime;
 
             yield return null;
@@ -301,8 +299,7 @@ public abstract class CharacterScript : MonoBehaviour
         // Calls the StopColorFlashing() method so that colorFlashCoroutine will be set to null when this coroutine finishes, meaning that it will always be null unless an overload of this coroutine is running.
         StopColorFlashing();
     }
-
-
+    
     // Called when the script is loaded.
     private void Awake()
     {
@@ -346,6 +343,22 @@ public abstract class CharacterScript : MonoBehaviour
                 if (knockBackForce.magnitude < 0.1f)
                     knockBackForce = Vector2.zero;
             }
+        }
+    }
+
+    // Called each time the GUI elements of the scene are updated.
+    private void OnGUI()
+    {
+        // If the character is frozen, displays a white 'F' character on it as indication.
+        if (IsFrozen)
+        {
+            // The position of the character in screen space (y-value is inverted because the screen origin is at the bottom-left).
+            Vector2 screenSpacePosition = Camera.main.WorldToScreenPoint(new Vector2(this.transform.position.x, -this.transform.position.y));
+            // Adjusts the screen position so that the 'F' character will be centered on the position of this character.
+            screenSpacePosition.x -= 4.0f;
+            screenSpacePosition.y -= 10.0f;
+            // Displays the 'F' character on the player using a GUI label.
+            GUI.Label(new Rect(screenSpacePosition, new Vector2(20, 20)), "F");
         }
     }
 }
