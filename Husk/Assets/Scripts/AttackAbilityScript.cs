@@ -151,7 +151,7 @@ public class AttackAbilityScript : AbilityScript
             {
                 // The script used to control the attacked character.
                 CharacterScript otherCharacterScript = otherCollider.GetComponent<CharacterScript>();
-                otherCharacterScript.Damage(parentCharacter.GetComponent<CharacterScript>().Heading * KnockbackForce, 0.0f);
+                otherCharacterScript.Damage(parentCharacter.GetComponent<CharacterScript>().Heading * KnockbackForce, 0.0f, 1.0f);
                 //// Applies knockback force in the direction of the attack.
                 //otherCharacterScript.ApplyKnockbackForce(parentCharacter.GetComponent<CharacterScript>().Heading * KnockbackForce);
                 //// Sets the character to be staggered for the specified duration after the knockback effect has cleared up.

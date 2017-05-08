@@ -39,25 +39,37 @@ public abstract class CharacterScript : MonoBehaviour
         get { return (colorFlashCoroutine != null); }
     }
 
-    // Applies various damage effects to the character.
-    public void Damage(Vector2 attackKnockbackForce, float attackStaggerDuration)
+    // Applies various damage effects to the character if it isn't currently invincible.
+    public void Damage(Vector2 attackKnockbackForce, float attackStaggerDuration, float attackInvincibilityDuration)
     {
-        this.knockBackForce = attackKnockbackForce;
+        if (invincibilityTimer == 0.0f)
+        {
+            this.knockBackForce = attackKnockbackForce;
+            this.previousAttackStaggerDuration = attackStaggerDuration;
+            this.invincibilityTimer = attackInvincibilityDuration;
 
-        // Causes the character to flash red.
-        if (IsColorFlashing)
-            StopColorFlashing();
-        FlashColor(Color.red, 0.2f);
+            // If the character isn't to be knocked back, instantly staggers it.
+            if (knockBackForce == Vector2.zero)
+            {
+                if (IsFrozen)
+                    Unfreeze();
+                Freeze(previousAttackStaggerDuration);
+            }
 
-        DamageAddendum();
+            // Causes the character to flash red.
+            if (IsColorFlashing)
+                StopColorFlashing();
+            FlashColor(Color.red, 0.2f);
+
+            DamageAddendum();
+        }
     }
 
-    
-
-    // Stops the character from being able to move itself for the specified duration.
+    // Stops the character from being able to move itself for the specified duration - not applicable if it's currently invincible.
     public void Freeze(float duration)
     {
-        freezeCoroutine = StartCoroutine(FreezeCoroutine(duration));
+        if (invincibilityTimer == 0.0f)
+            freezeCoroutine = StartCoroutine(FreezeCoroutine(duration));
     }
 
     // Unfreezes the character if it is currently frozen.
@@ -139,12 +151,18 @@ public abstract class CharacterScript : MonoBehaviour
     private Coroutine colorFlashCoroutine;
     // The force (applied through gameplay code, not Unity's physics engine) currently being applied to the character to simulate 'knockback' from an attack.
     private Vector2 knockBackForce;
+    // The amount of time to freeze the character after the knockback effect of the previous attack has worn off.
+    private float previousAttackStaggerDuration;
+    // The amount of time in seconds for which the character will be impervious to newly-applied damage and status effects such as knockback and stagger.
+    private float invincibilityTimer;
 
     // A coroutine which freezes the character in place for the specified duration, then unfreezes it.
     private IEnumerator FreezeCoroutine(float duration)
     {
         if (IsPaused)
             throw new System.InvalidOperationException("The character can't be frozen when paused.");
+        if (invincibilityTimer > 0.0f)
+            throw new System.InvalidOperationException("The character can't be frozen when invincible.");
         if (IsFrozen && knockBackForce == Vector2.zero)
             throw new System.InvalidOperationException("The character has already been manually frozen in a manner that isn't a result of knockback.");
         if (duration <= 0.0f)
@@ -299,7 +317,7 @@ public abstract class CharacterScript : MonoBehaviour
         // Calls the StopColorFlashing() method so that colorFlashCoroutine will be set to null when this coroutine finishes, meaning that it will always be null unless an overload of this coroutine is running.
         StopColorFlashing();
     }
-    
+
     // Called when the script is loaded.
     private void Awake()
     {
@@ -320,6 +338,8 @@ public abstract class CharacterScript : MonoBehaviour
         freezeCoroutine = null;
         colorFlashCoroutine = null;
         knockBackForce = Vector2.zero;
+        previousAttackStaggerDuration = 0.0f;
+        invincibilityTimer = 0.0f;
     }
 
     // Called each frame and used to update gameplay logic.
@@ -327,6 +347,14 @@ public abstract class CharacterScript : MonoBehaviour
     {
         if (!IsPaused)
         {
+            // If the character is currently invincible, decrements the invincibility timer.
+            if (invincibilityTimer > 0.0f)
+            {
+                invincibilityTimer -= Time.deltaTime;
+                if (invincibilityTimer < 0.0f)
+                    invincibilityTimer = 0.0f;
+            }
+
             // If the character isn't frozen or being effected by knockback, updates it's movement and attacking status.
             if (!IsFrozen)
             {
@@ -340,8 +368,16 @@ public abstract class CharacterScript : MonoBehaviour
 
                 // Reduces the magnitude of the knockback force by the weight value of the character every second.
                 knockBackForce = Vector2.ClampMagnitude(knockBackForce, knockBackForce.magnitude - (Weight * Time.deltaTime));
+                // If the knockback effect is over, staggers the character according to the amount set by the previous attack.
                 if (knockBackForce.magnitude < 0.1f)
+                {
                     knockBackForce = Vector2.zero;
+
+                    if (IsFrozen)
+                        Unfreeze();
+                    Freeze(previousAttackStaggerDuration);
+                    previousAttackStaggerDuration = 0.0f;
+                }
             }
         }
     }
@@ -349,15 +385,26 @@ public abstract class CharacterScript : MonoBehaviour
     // Called each time the GUI elements of the scene are updated.
     private void OnGUI()
     {
+        // If the character is invincible, displays a white 'I' character on it as indication.
+        if (invincibilityTimer > 0.0f)
+        {
+            // The position of the character in screen space (y-value is inverted because the screen origin is at the bottom-left).
+            Vector2 screenSpacePosition = Camera.main.WorldToScreenPoint(new Vector2(this.transform.position.x, -this.transform.position.y));
+            // Adjusts the screen position so that the 'I' character will be located at the center left of the position of this character.
+            screenSpacePosition.x -= 9.0f;
+            screenSpacePosition.y -= 10.0f;
+            // Displays the 'I' character on the character using a GUI label.
+            GUI.Label(new Rect(screenSpacePosition, new Vector2(20, 20)), "I");
+        }
         // If the character is frozen, displays a white 'F' character on it as indication.
         if (IsFrozen)
         {
             // The position of the character in screen space (y-value is inverted because the screen origin is at the bottom-left).
             Vector2 screenSpacePosition = Camera.main.WorldToScreenPoint(new Vector2(this.transform.position.x, -this.transform.position.y));
-            // Adjusts the screen position so that the 'F' character will be centered on the position of this character.
-            screenSpacePosition.x -= 4.0f;
+            // Adjusts the screen position so that the 'F' character will be located at the center right of the position of this character.
+            screenSpacePosition.x += 1.0f;
             screenSpacePosition.y -= 10.0f;
-            // Displays the 'F' character on the player using a GUI label.
+            // Displays the 'F' character on the character using a GUI label.
             GUI.Label(new Rect(screenSpacePosition, new Vector2(20, 20)), "F");
         }
     }
