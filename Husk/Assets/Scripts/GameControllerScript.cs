@@ -1,13 +1,13 @@
 ﻿//////////////////////////////////////////////////
 // Author/s:            Chris Murphy
 // Date created:        25/04/17
-// Date last edited:    07/05/17
+// Date last edited:    09/05/17
 //////////////////////////////////////////////////
 using UnityEngine;
 using System.Collections;
 
 // A script used to handle global actions that effect every gameplay object in the scene.
-public class SceneControllerScript : MonoBehaviour
+public class GameControllerScript : MonoBehaviour
 {
     // The property used to get if the scene is currently paused.
     public bool IsPaused

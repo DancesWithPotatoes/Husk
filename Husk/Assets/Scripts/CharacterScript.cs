@@ -1,7 +1,7 @@
 ﻿//////////////////////////////////////////////////
 // Author/s:            Chris Murphy
 // Date created:        16/04/17
-// Date last edited:    08/05/17
+// Date last edited:    09/05/17
 //////////////////////////////////////////////////
 using UnityEngine;
 using System.Collections;
@@ -16,7 +16,7 @@ public abstract class CharacterScript : MonoBehaviour
     public bool IsPaused;
     // The maximum movement speed of the character.
     public float MoveSpeed;
-    // The weight of the character, used to determine how quickly the knockback effect fades.
+    // The weight of the character, used to determine how quickly any knockback effect fades.
     public float Weight;
 
     // The property used to get the current heading of the character.
@@ -28,7 +28,7 @@ public abstract class CharacterScript : MonoBehaviour
     // The property used to get whether the character is currently unable to move itself.
     public bool IsFrozen
     {
-        // freezeCoroutine will have a value if FreezeCoroutine() is running, else it will always be equal to null - the character will also be considered frozen if under the influence of 'knockback'.
+        // freezeCoroutine will have a value if FreezeCoroutine() is running, else it will always be equal to null - the character will also be considered frozen if under the influence of knockback.
         get { return (freezeCoroutine != null || knockBackForce != Vector2.zero); }
     }
 
@@ -40,21 +40,44 @@ public abstract class CharacterScript : MonoBehaviour
     }
 
     // Applies various damage effects to the character if it isn't currently invincible.
-    public void Damage(Vector2 attackKnockbackForce, float attackStaggerDuration, float attackInvincibilityDuration)
+    public void Damage(Vector2 attackKnockbackForce, float attackInvincibilityDuration, float attackStaggerDuration, float screenShakeMagnitude, float hitStutterDuration)
     {
+        // Ensures that the stagger and invincibility duration values are greater than or equal to zero.
+        if (attackStaggerDuration < 0.0f)
+            throw new System.ArgumentOutOfRangeException("THe specified stagger duration must be greater than or equal to zero.");
+        if (attackInvincibilityDuration < 0.0f)
+            throw new System.ArgumentOutOfRangeException("THe specified invincibility duration must be greater than or equal to zero.");
+
+        // If the character isn't invincible, applies the damage effects.
         if (invincibilityTimer == 0.0f)
         {
-            this.knockBackForce = attackKnockbackForce;
-            this.previousAttackStaggerDuration = attackStaggerDuration;
-            this.invincibilityTimer = attackInvincibilityDuration;
-
-            // If the character isn't to be knocked back, instantly staggers it.
-            if (knockBackForce == Vector2.zero)
+            // If the damage dealt to the character doesn't apply knockback but does apply stagger, instantly applies the stagger effect before the character is made invincible and thus immune to being frozen.
+            if (attackKnockbackForce == Vector2.zero && attackStaggerDuration > 0.0f)
             {
                 if (IsFrozen)
                     Unfreeze();
-                Freeze(previousAttackStaggerDuration);
+                Freeze(attackStaggerDuration);
             }
+
+            // Updates the character members which will continue to effect the character after the method is completed.
+            this.knockBackForce = attackKnockbackForce;
+            this.invincibilityTimer = attackInvincibilityDuration;
+            this.previousAttackStaggerDuration = attackStaggerDuration;
+
+            // Causes the screen to shake for the duration of the of the character invincibility duration.
+            if (screenShakeMagnitude > 0.0f && attackInvincibilityDuration > 0.0f)
+            {
+                // The script used to handle the main camera.
+                MainCameraScript cameraScript = Camera.main.GetComponent<MainCameraScript>();
+                // Shakes the camera for the duration of the damaged player invinciblity.
+                if (cameraScript.IsShaking)
+                    cameraScript.StopShaking();
+                cameraScript.Shake(attackInvincibilityDuration, screenShakeMagnitude);
+            }
+
+            // Temporarily pauses the gameplay to create a 'hit stutter' effect, adding impact to the damage of the attack.
+            if (hitStutterDuration > 0.0f)
+                GameObject.FindWithTag("GameController").GetComponent<GameControllerScript>().PauseScene(hitStutterDuration);  
 
             // Causes the character to flash red.
             if (IsColorFlashing)
@@ -72,14 +95,12 @@ public abstract class CharacterScript : MonoBehaviour
             freezeCoroutine = StartCoroutine(FreezeCoroutine(duration));
     }
 
-    // Unfreezes the character if it is currently frozen.
+    // Unfreezes the character if it is currently frozen - doesn't cut short any knockback effect.
     public void Unfreeze()
     {
-        // Ensures that the character is currently frozen and thus that FreezeCoroutine() is currently running.
-        if (!IsFrozen)
-            throw new System.InvalidOperationException("The character isn't currently frozen.");
+        if (freezeCoroutine != null)
+            StopCoroutine(freezeCoroutine);
 
-        StopCoroutine(freezeCoroutine);
         freezeCoroutine = null;
     }
 
@@ -151,7 +172,7 @@ public abstract class CharacterScript : MonoBehaviour
     private Coroutine colorFlashCoroutine;
     // The force (applied through gameplay code, not Unity's physics engine) currently being applied to the character to simulate 'knockback' from an attack.
     private Vector2 knockBackForce;
-    // The amount of time to freeze the character after the knockback effect of the previous attack has worn off.
+    // The duration to freeze the character after the knockback effect of the previous attack has worn off.
     private float previousAttackStaggerDuration;
     // The amount of time in seconds for which the character will be impervious to newly-applied damage and status effects such as knockback and stagger.
     private float invincibilityTimer;
@@ -361,51 +382,70 @@ public abstract class CharacterScript : MonoBehaviour
                 UpdateMovement();
                 UpdateAttacking();
             }
-            // Else if the character is currently being effected by knockback, continues moving it to simulate being forced backwards and decrements the knockback force to account for friction.
-            else if (knockBackForce != Vector2.zero)
-            {
-                this.transform.Translate(knockBackForce * Time.deltaTime);
 
-                // Reduces the magnitude of the knockback force by the weight value of the character every second.
-                knockBackForce = Vector2.ClampMagnitude(knockBackForce, knockBackForce.magnitude - (Weight * Time.deltaTime));
-                // If the knockback effect is over, staggers the character according to the amount set by the previous attack.
-                if (knockBackForce.magnitude < 0.1f)
-                {
-                    knockBackForce = Vector2.zero;
-
-                    if (IsFrozen)
-                        Unfreeze();
-                    Freeze(previousAttackStaggerDuration);
-                    previousAttackStaggerDuration = 0.0f;
-                }
-            }
+            UpdateKnockback();
         }
     }
 
     // Called each time the GUI elements of the scene are updated.
     private void OnGUI()
     {
-        // If the character is invincible, displays a white 'I' character on it as indication.
+        // If the character is invincible, draws a white 'I' character on it.
         if (invincibilityTimer > 0.0f)
-        {
-            // The position of the character in screen space (y-value is inverted because the screen origin is at the bottom-left).
-            Vector2 screenSpacePosition = Camera.main.WorldToScreenPoint(new Vector2(this.transform.position.x, -this.transform.position.y));
-            // Adjusts the screen position so that the 'I' character will be located at the center left of the position of this character.
-            screenSpacePosition.x -= 9.0f;
-            screenSpacePosition.y -= 10.0f;
-            // Displays the 'I' character on the character using a GUI label.
-            GUI.Label(new Rect(screenSpacePosition, new Vector2(20, 20)), "I");
-        }
-        // If the character is frozen, displays a white 'F' character on it as indication.
+            DrawTextOnCharacter(new Vector2(-9.0f, -10.0f), "I");
+
+        // If the character is frozen, draws a white 'F' character on it.
         if (IsFrozen)
+            DrawTextOnCharacter(new Vector2(1.0f, -10.0f), "F");
+    }
+
+    // Updates the influence of the knockback effect on the character.
+    private void UpdateKnockback()
+    {
+        // Else if the character is currently being effected by knockback, continues moving it to simulate being forced backwards and decrements the knockback force to account for friction.
+        if (knockBackForce != Vector2.zero)
         {
-            // The position of the character in screen space (y-value is inverted because the screen origin is at the bottom-left).
-            Vector2 screenSpacePosition = Camera.main.WorldToScreenPoint(new Vector2(this.transform.position.x, -this.transform.position.y));
-            // Adjusts the screen position so that the 'F' character will be located at the center right of the position of this character.
-            screenSpacePosition.x += 1.0f;
-            screenSpacePosition.y -= 10.0f;
-            // Displays the 'F' character on the character using a GUI label.
-            GUI.Label(new Rect(screenSpacePosition, new Vector2(20, 20)), "F");
+            this.transform.Translate(knockBackForce * Time.deltaTime);
+
+            // Reduces the magnitude of the knockback force by the weight value of the character every second.
+            knockBackForce = Vector2.ClampMagnitude(knockBackForce, knockBackForce.magnitude - (Weight * Time.deltaTime));
+
+            // If the knockback effect is over, staggers the character according to the duration specified by the previous attack.
+            if (knockBackForce.magnitude < 0.1f)
+            {
+                knockBackForce = Vector2.zero;
+
+                if (IsFrozen)
+                    Unfreeze();
+                // A temporary variable used to store the current value of the invincibility timer.
+                float tempInvincibilityTimer = 0.0f;
+                // Stores the value of the invincibility timer in the temp variable and sets it to zero, as the character cannot be frozen when the invincibility timer is greater than zero.
+                if (invincibilityTimer > 0.0f)
+                {
+                    tempInvincibilityTimer = invincibilityTimer;
+                    invincibilityTimer = 0.0f;
+                }
+                // Freezes the character to simulate the stagger effect.
+                Freeze(previousAttackStaggerDuration);
+                // Resets the invincibility timer to it's original state.
+                invincibilityTimer = tempInvincibilityTimer;
+
+                previousAttackStaggerDuration = 0.0f;
+            }
         }
+    }
+
+    // Renders the specified string as GUI text on the character.
+    private void DrawTextOnCharacter(Vector2 offsetFromCenterInPixels, string text)
+    {
+        // The position of the character in screen space (y-value is inverted because the screen origin is at the bottom-left).
+        Vector2 screenSpacePosition = Camera.main.WorldToScreenPoint(new Vector2(this.transform.position.x, -this.transform.position.y));
+
+        // Adjusts the screen position so that the text will be rendered at the specified offset from the center of the character in screen-space pixels.
+        screenSpacePosition.x += offsetFromCenterInPixels.x;
+        screenSpacePosition.y += offsetFromCenterInPixels.y;
+
+        // Displays the text on the character using a GUI label.
+        GUI.Label(new Rect(screenSpacePosition, new Vector2(9999.9f, 9999.9f)), text);
     }
 }
