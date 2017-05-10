@@ -26,8 +26,6 @@ public class GameControllerScript : MonoBehaviour
 
         // Sets the pause timer to -1.0f so that the scene will remain paused indefinitely until unpaused.
         pauseTimer = -1.0f;
-
-        Debug.Log("Paused");
     }
     // Pauses the scene for a specific duration.
     public void PauseScene(float duration)
@@ -41,8 +39,6 @@ public class GameControllerScript : MonoBehaviour
         ChangeAllGameObjectsPausedState(true);
 
         pauseTimer = duration;
-
-        Debug.Log("Paused");
     }
 
     // Unpauses the scene.
@@ -55,8 +51,6 @@ public class GameControllerScript : MonoBehaviour
         ChangeAllGameObjectsPausedState(false);
 
         pauseTimer = 0.0f;
-
-        Debug.Log("Unpaused");
     }
 
 
